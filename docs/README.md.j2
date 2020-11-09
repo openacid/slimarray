@@ -6,7 +6,7 @@
 [![Report card](https://goreportcard.com/badge/github.com/openacid/polyarray)](https://goreportcard.com/report/github.com/openacid/polyarray)
 [![GolangCI](https://golangci.com/badges/github.com/openacid/polyarray.svg)](https://golangci.com/r/github.com/openacid/polyarray)
 [![Sourcegraph](https://sourcegraph.com/github.com/openacid/polyarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/polyarray?badge)
-[![Coverage Status](https://coveralls.io/repos/github/openacid/polyarray/badge.svg?branch=master)](https://coveralls.io/github/openacid/polyarray?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/openacid/polyarray/badge.svg?branch=main)](https://coveralls.io/github/openacid/polyarray?branch=main)
 
 PolyArray takes only **4 bit** to store an `int32` in an array with an overall trend.
 
