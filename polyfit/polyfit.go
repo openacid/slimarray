@@ -9,7 +9,7 @@
 //
 // See https://en.wikipedia.org/wiki/Least_squares#Linear_least_squares
 //
-// Since 0.5.4
+// Since 0.1.0
 package polyfit
 
 import (
@@ -26,11 +26,8 @@ import (
 //
 // It use linear regression, which assumes f(x) is in form of:
 //           m
-//    f(x) = ∑ βⱼ Φⱼ(x)
+//    f(x) = ∑ βⱼ Φⱼ(x),   Φⱼ(x) = xʲ⁻¹
 //           j=1
-//
-// In our case:
-//    Φⱼ(x) = xʲ⁻¹
 //
 // Find β to minimize (f(xᵢ) - yᵢ)²,
 // e.g., ||Xβ - Y||² = (Xβ −Y)ᵀ(Xβ −Y) = YᵀY − YᵀXβ − βᵀXᵀY + βᵀXᵀXβ
@@ -54,7 +51,7 @@ import (
 //
 // See https://en.wikipedia.org/wiki/Least_squares#Linear_least_squares
 //
-// Since 0.5.4
+// Since 0.1.0
 type Fitting struct {
 	N      int
 	Degree int
@@ -68,7 +65,7 @@ type Fitting struct {
 // NewFitting creates a new polynomial fitting context, with points and the
 // degree of the polynomial.
 //
-// Since 0.5.4
+// Since 0.1.0
 func NewFitting(xs, ys []float64, degree int) *Fitting {
 
 	n := len(xs)
@@ -100,7 +97,7 @@ func NewFitting(xs, ys []float64, degree int) *Fitting {
 
 // Add a point(x, y) into this fitting.
 //
-// Since 0.5.4
+// Since 0.1.0
 func (f *Fitting) Add(x, y float64) {
 
 	m := f.Degree + 1
@@ -132,7 +129,7 @@ func (f *Fitting) Add(x, y float64) {
 //    |X₁|ᵀ × |X₁| = X₁ᵀX₁ + X₂ᵀX₂
 //    |X₂|    |X₂|
 //
-// Since 0.5.4
+// Since 0.1.0
 func (f *Fitting) Merge(b *Fitting) {
 
 	if f.Degree != b.Degree {
@@ -158,7 +155,7 @@ func (f *Fitting) Merge(b *Fitting) {
 // polynomial. Since there is a polynomial of degree n that passes exactly n+1
 // points.
 //
-// Since 0.5.4
+// Since 0.1.0
 func (f *Fitting) Solve(minimizeDegree bool) []float64 {
 
 	m := f.Degree + 1
@@ -207,7 +204,7 @@ func (f *Fitting) Solve(minimizeDegree bool) []float64 {
 //     1.000
 //     1.000
 //
-// Since 0.5.4
+// Since 0.1.0
 func (f *Fitting) String() string {
 
 	m := f.Degree + 1
