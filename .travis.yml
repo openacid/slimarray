@@ -8,6 +8,9 @@ go:
 script:
     - make travis
 
+after_success:
+    - make coveralls
+
 # private repo requires a crypted token:
 # env:
 #     global:

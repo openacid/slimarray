@@ -13,7 +13,7 @@ GO := go
 
 check: test vet gofmt misspell unconvert staticcheck ineffassign unparam
 
-travis: test vet gofmt misspell unconvert ineffassign unparam coveralls
+travis: test vet gofmt misspell unconvert ineffassign unparam
 
 test:
 	$(GO) test -v -tags debug $(PKGS)
