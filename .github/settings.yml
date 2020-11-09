@@ -1,0 +1,8 @@
+_extends: gh-config
+
+
+repository:
+  name: polyarray
+  description: PolyArray takes only 4bit to store an int32 in an array with an overall trend.
+  homepage: https://openacid.github.io/
+  topics: go, golang, memory, compacted, compress, array
