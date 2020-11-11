@@ -151,19 +151,18 @@ func (f *Fitting) Merge(b *Fitting) {
 // Solve the equation and returns coefficients of the result polynomial.
 // The number of coefficients is f.Degree + 1.
 //
-// If minimizeDegree is specified, it tries to reduce degree of the result
-// polynomial. Since there is a polynomial of degree n that passes exactly n+1
-// points.
+// It tries to reduce degree of the result polynomial. Since there is a
+// polynomial of degree n that passes exactly n+1 points.
 //
 // Since 0.1.0
-func (f *Fitting) Solve(minimizeDegree bool) []float64 {
+func (f *Fitting) Solve() []float64 {
 
 	m := f.Degree + 1
 
 	coef := mat.NewDense(m, m, f.xtx)
 	right := mat.NewDense(m, 1, f.xty)
 
-	if minimizeDegree && f.Degree+1 > f.N {
+	if f.Degree+1 > f.N {
 
 		m = f.N
 
@@ -172,7 +171,15 @@ func (f *Fitting) Solve(minimizeDegree bool) []float64 {
 	}
 
 	var beta mat.Dense
-	beta.Solve(coef, right)
+	err := beta.Solve(coef, right)
+
+	// Sometimes it returns error about a large condition number, e.g.: matrix
+	// singular or near-singular with condition number 1.3240e+16.
+	// The β is inaccurate in this case(near sigular matrix) but it does not
+	// matteer. The most common case having this error is to fit points less
+	// than degree+1, e.g., fit y = ax² + bx + c with only two points, or with
+	// several points on a straight line.
+	_ = err
 
 	rst := make([]float64, f.Degree+1)
 	for i := 0; i < m; i++ {
@@ -182,7 +189,6 @@ func (f *Fitting) Solve(minimizeDegree bool) []float64 {
 	for i := m; i < f.Degree+1; i++ {
 		rst[i] = 0
 	}
-
 	return rst
 }
 

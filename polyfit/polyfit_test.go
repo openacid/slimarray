@@ -116,27 +116,23 @@ func TestFitting_Solve(t *testing.T) {
 
 	for i, c := range cases {
 		f := NewFitting(xs, ys, c.degree)
-		for _, minimize := range []bool{false, true} {
 
-			poly := f.Solve(minimize)
-			ta.Equal(c.degree+1, len(poly))
+		poly := f.Solve()
+		ta.Equal(c.degree+1, len(poly))
 
-			if minimize {
-				ta.InDeltaSlice(c.want, poly, 0.0001,
+		ta.InDeltaSlice(c.want, poly, 0.0001,
+			"%d-th: input: %#v; want: %#v; actual: %#v",
+			i+1, c.degree, c.want, poly)
+
+		if c.degree >= len(xs)-1 {
+			// curve pass every point
+
+			for j, x := range xs {
+				v := eval(poly, x)
+
+				ta.InDelta(ys[j], v, 0.0001,
 					"%d-th: input: %#v; want: %#v; actual: %#v",
-					i+1, c.degree, c.want, poly)
-			}
-
-			if c.degree >= len(xs)-1 {
-				// curve pass every point
-
-				for j, x := range xs {
-					v := eval(poly, x)
-
-					ta.InDelta(ys[j], v, 0.0001,
-						"%d-th: input: %#v; want: %#v; actual: %#v",
-						i+1, c.degree, ys[j], v)
-				}
+					i+1, c.degree, ys[j], v)
 			}
 		}
 

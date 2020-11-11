@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option go_package = "polyarray";
+
+// PolyArray uses one or more polynomial to compress and store an array of int32.
+//
+// The general idea
+//
+// We use a polynomial y = a + b x + c x^2 to describe trend of the numbers.
+// And for every number we add a residual to fit the gap between y(i) and
+// nums[i].
+// E.g. If there are 4 numbers: 0, 15, 33, 50
+// The polynomial and residuals could be:
+//     y = 16 x
+//     0, -1, 1, 2
+// 
+// And the residuals require only 3 bits for any of them.
+// To retrieve the numbers, we evaluate y(i) and add the residual to it:
+//     get(0) = y(0) + 0 = 16 * 0 + 0 = 0
+//     get(1) = y(1) - 1 = 16 * 1 - 1 = 15
+//     get(2) = y(2) + 1 = 16 * 2 + 1 = 33
+//     get(3) = y(3) + 2 = 16 * 3 + 2 = 50
+//
+// Data structure
+//
+// PolyArray splits the entire array into segments, each of which has 1024 elts.
+// And then splits every segment into several spans.
+// Every span has its own polynomial. A span is of length = 16*k
+// Thus a segment has at most 64 spans.
+//
+// For every segment there is a uint64 bitmap to describe what spans a
+// polynomial spans:
+// A "1" at i and a "1" at j means a polynomial spans nums[(i+1)*16:(j+1)*16]
+// 
+//     000101110000...(all 0)...1
+//     <-- least significant bit 
+//
+// In the above example, there are 5 polynomials, each of them spans:
+// nums[0:64], nums[64:96], nums[96:112], nums[112:128], nums[128:1024]
+//
+// The "Bitmap" array allocates 2 uint64 for every segment:
+// One of them is bitmap, another is bitmap rank index for speeding up locating
+// a polynomial.
+//
+// Every polynomial needs 4 float64 in the "Polynomials" array:
+// In our implementation polynomials are all of degree 2:
+//    y = a + b x + c x^2
+//
+// Thus to store a polynomial we need 3 float64.
+// And we use another float64 to store additional info:
+// The width in bit of residuals, and where the first residual is in array
+// "Residuals"
+//
+// Since 0.5.2
+message PolyArray {
+
+    int32  N                    = 10;
+
+    repeated uint64 Bitmap      = 20; // 64-bit bitmap and 64-bit rank
+    repeated double Polynomials = 21; // 3 doubles for a poly; 1 double for 47-bit position in Residuals, 4-bit elt-width
+    repeated uint64 Residuals   = 22; // stores 64/EltWidth EltWidth-bits elements in a uint64
+}
