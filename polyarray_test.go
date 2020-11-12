@@ -88,12 +88,7 @@ func TestPolyArray_New(t *testing.T) {
 	for _, nums := range cases {
 
 		a := NewPolyArray(nums)
-		for i, n := range nums {
-			r := a.Get(int32(i))
-			ta.Equal(n, r, "i=%d expect: %v; but: %v", i, n, r)
-		}
-
-		ta.Equal(len(nums), a.Len())
+		testGet(ta, a, nums)
 
 		// Stat() should work
 		_ = a.Stat()
@@ -144,10 +139,7 @@ func TestNewPolyArray_big(t *testing.T) {
 	st := a.Stat()
 	fmt.Println(st)
 
-	for i, n := range ns {
-		r := a.Get(int32(i))
-		ta.Equal(n, r, "i=%d ", i)
-	}
+	testGet(ta, a, ns)
 }
 
 func TestNewPolyArray_bigResidual_lowhigh(t *testing.T) {
@@ -167,10 +159,7 @@ func TestNewPolyArray_bigResidual_lowhigh(t *testing.T) {
 	st := a.Stat()
 	fmt.Println(st)
 
-	for i, n := range ns {
-		r := a.Get(int32(i))
-		ta.Equal(n, r, "i=%d ", i)
-	}
+	testGet(ta, a, ns)
 }
 
 func TestNewPolyArray_bigResidual_zipzag(t *testing.T) {
@@ -190,10 +179,7 @@ func TestNewPolyArray_bigResidual_zipzag(t *testing.T) {
 	st := a.Stat()
 	fmt.Println(st)
 
-	for i, n := range ns {
-		r := a.Get(int32(i))
-		ta.Equal(n, r, "i=%d ", i)
-	}
+	testGet(ta, a, ns)
 }
 
 func TestNewPolyArray_largenum(t *testing.T) {
@@ -211,11 +197,7 @@ func TestNewPolyArray_largenum(t *testing.T) {
 	}
 
 	a := NewPolyArray(ns)
-
-	for i, n := range ns {
-		r := a.Get(int32(i))
-		ta.Equal(n, r, "i=%d ", i)
-	}
+	testGet(ta, a, ns)
 }
 
 func TestPolyArray_Get_panic(t *testing.T) {
@@ -262,10 +244,15 @@ func TestPolyArray_marshalUnmarshal(t *testing.T) {
 	err = proto.Unmarshal(bytes, b)
 	ta.Nil(err, "want no error but: %+v", err)
 
-	for i, n := range polyTestNums {
-		r := b.Get(int32(i))
-		ta.Equal(n, r, "i=%d ", i)
+	testGet(ta, b, polyTestNums)
+}
+
+func testGet(ta *require.Assertions, a *PolyArray, nums []uint32) {
+	for i, n := range nums {
+		r := a.Get(int32(i))
+		ta.Equal(n, r, "i=%d expect: %v; but: %v", i, n, r)
 	}
+	ta.Equal(len(nums), a.Len())
 }
 
 var Output int
