@@ -58,6 +58,9 @@ func TestMarginWidth(t *testing.T) {
 		{255, 8},
 		{256, 16},
 		{65535, 16},
+		{65536, 32},
+		{0x7fffffff, 32},
+		{-1, 32},
 	}
 
 	for i, c := range cases {

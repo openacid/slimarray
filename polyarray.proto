@@ -20,7 +20,7 @@ message PolyArray {
 
     // Config stores the offset of residuals in Residuals and the bit width to
     // store a residual in a span.
-    repeated uint64 Configs = 22;
+    repeated int64 Configs = 22;
 
     // packed residuals for every elt.
     repeated uint64 Residuals   = 23;

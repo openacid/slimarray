@@ -82,6 +82,14 @@
 // overall trend of this span. I.e. the `[a, b, c]` in `y = a + bx + cx²`
 //
 // `Span.Config.Offset` adjust the offset to locate a residual.
+// In a span we want to have that:
+//		residual position = Config.Offset + (i%1024) * Config.ResidualWidth
+//
+// But if the preceding span has smaller residual width, the "offset" could be
+// negative, e.g.: span[0] has residual of width 0 and 16 residuals,
+// span[1] has residual of width 4.
+// Then the "offset" of span[1] is -16*4 in order to satisify:
+// (-16*4) + i * 4 is the correct residual position, for i in [16, 32).
 //
 // `Span.Config.ResidualWidth` specifies the number of bits to
 // store every residual in this span, it must be a power of 2: `2^k`.
@@ -155,16 +163,6 @@ const (
 
 	// Count of coefficients of a polynomial.
 	polyCoefCnt = polyDegree + 1
-
-	// In a span we want:
-	//		residual position = offset + (i%1024) * residualWidth
-	// But if preceding span has smaller residual width, the "offset" could be
-	// negative, e.g.: span[0] has residual of width 0 and 16 residuals,
-	// span[1] has residual of width 4.
-	// Then the "offset" of span[1] is -16*4 in order to satisify:
-	// (-16*4) + i * 4 is the correct residual position, for i in [16, 32).
-	maxNegOffset = int64(segSize) * int64(maxResidualWidth)
-	// TODO: negative float seems allright?
 )
 
 // evalpoly2 evaluates a polynomial with degree=2.
@@ -227,7 +225,7 @@ func (m *PolyArray) Get(i int32) int32 {
 
 	config := m.Configs[spanIdx]
 	residualWidth := int64(config & 0xff)
-	offset := int64(config>>8) - maxNegOffset
+	offset := config >> 8
 
 	// where the residual is
 	resBitIdx := offset + int64(i)*residualWidth
@@ -307,7 +305,7 @@ func (m *PolyArray) addSeg(nums []int32) {
 	m.Residuals = append(m.Residuals, words...)
 }
 
-func newSeg(nums []int32, start int64) (uint64, []float64, []uint64, []uint64) {
+func newSeg(nums []int32, start int64) (uint64, []float64, []int64, []uint64) {
 
 	n := int32(len(nums))
 	xs := make([]float64, n)
@@ -324,7 +322,7 @@ func newSeg(nums []int32, start int64) (uint64, []float64, []uint64, []uint64) {
 	spans := findMinFittingsNew(xs, ys, fts)
 
 	polys := make([]float64, 0)
-	configs := make([]uint64, 0)
+	configs := make([]int64, 0)
 	words := make([]uint64, n) // max size
 
 	// Using a bitmap to describe which spans a polynomial spans
@@ -354,8 +352,8 @@ func newSeg(nums []int32, start int64) (uint64, []float64, []uint64, []uint64) {
 		// min of stBySeg is -segmentSize * residualWidth = -1024 * 16;
 		// Add this value to make it a positive number.
 		offset := resI + start - int64(sp.s)*int64(width)
-		confu64 := uint64(offset+maxNegOffset)<<8 | uint64(width)
-		configs = append(configs, confu64)
+		confi64 := offset<<8 | int64(width)
+		configs = append(configs, confi64)
 
 		for j := sp.s; j < sp.e; j++ {
 
