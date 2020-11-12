@@ -142,9 +142,6 @@ import (
 )
 
 const (
-	// The max number of bits to store a residual.
-	maxResidualWidth = 16
-
 	// The smallest span is 16 int32 numbers.
 	// Two adjacent span will be merged into one if the result span costs less
 	// memory.
@@ -175,7 +172,7 @@ func evalpoly2(poly []float64, x float64) float64 {
 // NewPolyArray creates a "PolyArray" array from a slice of int32.
 //
 // Since 0.1.1
-func NewPolyArray(nums []int32) *PolyArray {
+func NewPolyArray(nums []uint32) *PolyArray {
 
 	pa := &PolyArray{
 		N: int32(len(nums)),
@@ -200,7 +197,7 @@ func NewPolyArray(nums []int32) *PolyArray {
 // A Get() costs about 10 ns
 //
 // Since 0.1.1
-func (m *PolyArray) Get(i int32) int32 {
+func (m *PolyArray) Get(i int32) uint32 {
 
 	// The index of a segment
 	bitmapI := (i >> segSizeShift) << 1
@@ -217,14 +214,10 @@ func (m *PolyArray) Get(i int32) int32 {
 
 	j := spanIdx * polyCoefCnt
 	p := m.Polynomials
-	v := int32(p[j] + p[j+1]*x + p[j+2]*x*x)
-
-	// read the config of this Span:
-	// residualWidth: how many bits a residual needs.
-	// offset.
+	v := int64(p[j] + p[j+1]*x + p[j+2]*x*x)
 
 	config := m.Configs[spanIdx]
-	residualWidth := int64(config & 0xff)
+	residualWidth := config & 0xff
 	offset := config >> 8
 
 	// where the residual is
@@ -234,7 +227,7 @@ func (m *PolyArray) Get(i int32) int32 {
 	d := m.Residuals[resBitIdx>>6]
 	d = d >> uint(resBitIdx&63)
 
-	return v + int32(d&bitmap.Mask[residualWidth])
+	return uint32(v + int64(d&bitmap.Mask[residualWidth]))
 }
 
 // Len returns number of elements.
@@ -287,7 +280,7 @@ func (m *PolyArray) Stat() map[string]int32 {
 	return st
 }
 
-func (m *PolyArray) addSeg(nums []int32) {
+func (m *PolyArray) addSeg(nums []uint32) {
 
 	bm, polys, configs, words := newSeg(nums, int64(len(m.Residuals)*64))
 
@@ -305,7 +298,7 @@ func (m *PolyArray) addSeg(nums []int32) {
 	m.Residuals = append(m.Residuals, words...)
 }
 
-func newSeg(nums []int32, start int64) (uint64, []float64, []int64, []uint64) {
+func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 
 	n := int32(len(nums))
 	xs := make([]float64, n)
@@ -336,7 +329,6 @@ func newSeg(nums []int32, start int64) (uint64, []float64, []int64, []uint64) {
 		segPolyBitmap |= (1 << uint((sp.e-1)>>4))
 
 		width := sp.residualWidth
-		margin := int32((1 << width) - 1)
 		if width > 0 {
 			resI = (resI + int64(width) - 1)
 			resI -= resI % int64(width)
@@ -359,10 +351,9 @@ func newSeg(nums []int32, start int64) (uint64, []float64, []int64, []uint64) {
 
 			v := evalpoly2(sp.poly, xs[j])
 
-			d := nums[j] - int32(v)
-			if d > margin || d < 0 {
-				panic(fmt.Sprintf("d=%d must smaller than %d and > 0", d, margin))
-			}
+			// It may overflow but the result is correct because (a+b) % p =
+			// (a%p + b%p) % p
+			d := uint32(int64(nums[j]) - int64(v))
 
 			wordI := resI >> 6
 			words[wordI] |= uint64(d) << uint(resI&63)
@@ -486,10 +477,13 @@ func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) span {
 
 	poly := ft.Solve()
 	max, min := maxMinResiduals(poly, xs[s:e], ys[s:e])
-	margin := int32(math.Ceil(max - min))
+	margin := int64(math.Ceil(max - min))
 	poly[0] += min
 
 	residualWidth := marginWidth(margin)
+	if residualWidth > 32 {
+		residualWidth = 32
+	}
 	mem := memCost(poly, residualWidth, int32(ft.N))
 
 	return span{
@@ -515,9 +509,9 @@ func mergeTwoFitting(a, b *polyfit.Fitting) *polyfit.Fitting {
 // The returned number of bits is a power of 2: 2^k, e.g., 0, 1, 2, 4, 8...
 //
 // Since 0.1.1
-func marginWidth(margin int32) uint32 {
+func marginWidth(margin int64) uint32 {
 	// log(2, margin)
-	width := uint32(32 - bits.LeadingZeros32(uint32(margin)))
+	width := uint32(64 - bits.LeadingZeros64(uint64(margin)))
 
 	// align width to 2^k:
 

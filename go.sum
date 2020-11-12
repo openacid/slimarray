@@ -21,8 +21,8 @@ github.com/openacid/errors v0.8.1/go.mod h1:GUQEJJOJE3W9skHm8E8Y4phdl2LLEN8iD7c5
 github.com/openacid/low v0.1.10 h1:rKpmB5CHtKoPq9tFiqUvRk8vtWaPympL2D2dNfw3PvI=
 github.com/openacid/low v0.1.10/go.mod h1:QCkCiLykPRXaaZV76EsiRePPqQlqraEaV5WdGQh4qKk=
 github.com/openacid/must v0.1.3/go.mod h1:luPiXCuJlEo3UUFQngVQokV0MPGryeYvtCbQPs3U1+I=
-github.com/openacid/testutil v0.1.0 h1:HKQdACX4RkRSIwazBKHJcbo6H6o6pkncVsmaveLIhag=
-github.com/openacid/testutil v0.1.0/go.mod h1:qgfN+myXuX8gc+JveuP+sts//cpvCGRM5BIqwpYnzIs=
+github.com/openacid/testutil v0.1.1 h1:VjeSpDYpbODPXlazW6e247m6S1siETuph44N4Z1jRac=
+github.com/openacid/testutil v0.1.1/go.mod h1:qgfN+myXuX8gc+JveuP+sts//cpvCGRM5BIqwpYnzIs=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

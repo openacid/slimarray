@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var polyTestNums []int32 = []int32{
+var polyTestNums []uint32 = []uint32{
 	0, 16, 32, 48, 64, 79, 95, 111, 126, 142, 158, 174, 190, 206, 222, 236,
 	252, 268, 275, 278, 281, 283, 285, 289, 296, 301, 304, 307, 311, 313, 318,
 	321, 325, 328, 335, 339, 344, 348, 353, 357, 360, 364, 369, 372, 377, 383,
@@ -45,7 +45,7 @@ func TestMarginWidth(t *testing.T) {
 	ta := require.New(t)
 
 	cases := []struct {
-		input int32
+		input int64
 		want  uint32
 	}{
 		{0, 0},
@@ -60,7 +60,7 @@ func TestMarginWidth(t *testing.T) {
 		{65535, 16},
 		{65536, 32},
 		{0x7fffffff, 32},
-		{-1, 32},
+		{-1, 64},
 	}
 
 	for i, c := range cases {
@@ -74,11 +74,11 @@ func TestMarginWidth(t *testing.T) {
 func TestPolyArray_New(t *testing.T) {
 	ta := require.New(t)
 
-	cases := [][]int32{
+	cases := [][]uint32{
 		{},
 		{0},
-		{-1},
-		{-1, -2},
+		{1},
+		{1, 2},
 		polyTestNums[:10],
 		polyTestNums[:50],
 		polyTestNums[:200],
@@ -106,9 +106,9 @@ func TestNewPolyArray_eltWidthSmall(t *testing.T) {
 	ta := require.New(t)
 
 	n := 500
-	nums := make([]int32, n)
+	nums := make([]uint32, n)
 	for i := 0; i < n; i++ {
-		nums[i] = int32(15 * i)
+		nums[i] = uint32(15 * i)
 	}
 
 	a := NewPolyArray(nums)
@@ -138,9 +138,57 @@ func TestNewPolyArray_big(t *testing.T) {
 
 	n := int32(1024 * 1024)
 	step := int32(64)
-	ns := testutil.RandI32Slice(0, n, step)
+	ns := testutil.RandU32Slice(0, n, step)
 
 	a := NewPolyArray(ns)
+	st := a.Stat()
+	fmt.Println(st)
+
+	for i, n := range ns {
+		r := a.Get(int32(i))
+		ta.Equal(n, r, "i=%d ", i)
+	}
+}
+
+func TestNewPolyArray_bigResidual_lowhigh(t *testing.T) {
+
+	ta := require.New(t)
+
+	big := uint32(1<<31 - 1)
+
+	ns := []uint32{
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		big, big, big, big,
+		big, big, big, big,
+	}
+
+	a := NewPolyArray(ns)
+	st := a.Stat()
+	fmt.Println(st)
+
+	for i, n := range ns {
+		r := a.Get(int32(i))
+		ta.Equal(n, r, "i=%d ", i)
+	}
+}
+
+func TestNewPolyArray_bigResidual_zipzag(t *testing.T) {
+
+	ta := require.New(t)
+
+	big := uint32(0xffffffff)
+
+	ns := []uint32{
+		0, 0, 0, 0,
+		0, big, 0, 0,
+		0, 0, 0, 0,
+		0, big, 0, 0,
+	}
+
+	a := NewPolyArray(ns)
+	st := a.Stat()
+	fmt.Println(st)
 
 	for i, n := range ns {
 		r := a.Get(int32(i))
@@ -154,7 +202,7 @@ func TestNewPolyArray_largenum(t *testing.T) {
 
 	n := int32(1024 * 1024)
 	step := int32(64)
-	ns := testutil.RandI32Slice(1<<30, n, step)
+	ns := testutil.RandU32Slice(1<<30, n, step)
 
 	for i := 0; i < len(ns); i++ {
 		if ns[i] < 0 {
@@ -227,9 +275,9 @@ func BenchmarkPolyArray_Get(b *testing.B) {
 	n := int32(1024 * 1024)
 	mask := int(n - 1)
 	step := int32(128)
-	ns := testutil.RandI32Slice(0, n, step)
+	ns := testutil.RandU32Slice(0, n, step)
 
-	s := int32(0)
+	s := uint32(0)
 
 	a := NewPolyArray(ns)
 	fmt.Println(a.Stat())
@@ -247,9 +295,9 @@ func BenchmarkNewPolyArray(b *testing.B) {
 
 	n := int32(1024 * 1024)
 	step := int32(128)
-	ns := testutil.RandI32Slice(0, n, step)
+	ns := testutil.RandU32Slice(0, n, step)
 
-	s := int32(0)
+	s := uint32(0)
 
 	b.ResetTimer()
 	var a *PolyArray
