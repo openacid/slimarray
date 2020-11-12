@@ -86,13 +86,6 @@
 // `Span.Config.ResidualWidth` specifies the number of bits to
 // store every residual in this span, it must be a power of 2: `2^k`.
 //
-// With Offset = 123, ResidualWidth = 4, then the packed config is a double
-// value:
-// 2^14 + 4 + 123 / 2^36 = 16388.0000000017899
-//
-// A double value has 52 bit for Significand field, thus a double has enough
-// capacity to store a Config.
-//
 // `Span.Residuals` is an array of residuals of length `Span.width`.
 // Every elt in it is a `ResidualWidth`-bits integers.
 //
@@ -109,15 +102,20 @@
 //
 //   PolyArray.Polynomials = [
 //     Seg[0].Spans[0].Polynomials,
-//     Seg[0].Spans[0].Config,
 //     Seg[0].Spans[1].Polynomials,
-//     Seg[0].Spans[1].Config,
 //     ...
 //     Seg[1].Spans[0].Polynomials,
-//     Seg[1].Spans[0].Config,
 //     Seg[1].Spans[1].Polynomials,
-//     Seg[1].Spans[1].Config,
 //     ...
+//   ]
+//
+//   PolyArray.Configs = [
+//		Seg[0].Spans[0].Config
+//		Seg[0].Spans[1].Config
+//		...
+//		Seg[1].Spans[0].Config
+//		Seg[1].Spans[1].Config
+//		...
 //   ]
 //
 // `PolyArray.Residuals` simply packs the residuals of every nums[i] together.
@@ -157,13 +155,6 @@ const (
 
 	// Count of coefficients of a polynomial.
 	polyCoefCnt = polyDegree + 1
-
-	// A span has 4 float64: 3 coefficients and 1 as placeholder of span config,
-	// see packConfig()
-	f64PerSpan      = polyCoefCnt + 1 // 3 coefficients and 1 config
-	f64PerSpanShift = 2
-
-	twoPow36 = float64(int64(1) << 36)
 
 	// In a span we want:
 	//		residual position = offset + (i%1024) * residualWidth
@@ -208,7 +199,7 @@ func NewPolyArray(nums []int32) *PolyArray {
 }
 
 // Get returns the uncompressed int32 value.
-// A Get() costs about 11 ns
+// A Get() costs about 10 ns
 //
 // Since 0.1.1
 func (m *PolyArray) Get(i int32) int32 {
@@ -226,7 +217,7 @@ func (m *PolyArray) Get(i int32) int32 {
 
 	// eval y = a + bx + cx²
 
-	j := spanIdx << f64PerSpanShift
+	j := spanIdx * polyCoefCnt
 	p := m.Polynomials
 	v := int32(p[j] + p[j+1]*x + p[j+2]*x*x)
 
@@ -234,9 +225,9 @@ func (m *PolyArray) Get(i int32) int32 {
 	// residualWidth: how many bits a residual needs.
 	// offset.
 
-	config := p[j+3]
-	residualWidth := int64(config)
-	offset := int64((config-float64(residualWidth))*twoPow36) - maxNegOffset
+	config := m.Configs[spanIdx]
+	residualWidth := int64(config & 0xff)
+	offset := int64(config>>8) - maxNegOffset
 
 	// where the residual is
 	resBitIdx := offset + int64(i)*residualWidth
@@ -273,8 +264,7 @@ func (m *PolyArray) Stat() map[string]int32 {
 	memWords := len(m.Residuals) * 8
 	widthAvg := 0
 	for i := 0; i < spanCnt; i++ {
-		// get the last float64
-		_, w := unpackConfig(m.Polynomials[i*f64PerSpan+f64PerSpan-1])
+		w := m.Configs[i] & 0xff
 		widthAvg += int(w)
 	}
 
@@ -299,19 +289,9 @@ func (m *PolyArray) Stat() map[string]int32 {
 	return st
 }
 
-func packConfig(offset int64, residualWidth int64) float64 {
-	return float64(residualWidth) + float64(offset)/twoPow36
-}
-
-func unpackConfig(config float64) (int64, int64) {
-	residualWidth := int64(config)
-	offset := int64((config - float64(residualWidth)) * twoPow36)
-	return offset, residualWidth
-}
-
 func (m *PolyArray) addSeg(nums []int32) {
 
-	bm, polys, words := newSeg(nums, int64(len(m.Residuals)*64))
+	bm, polys, configs, words := newSeg(nums, int64(len(m.Residuals)*64))
 
 	var r uint64
 	if len(m.Bitmap) > 0 {
@@ -323,10 +303,11 @@ func (m *PolyArray) addSeg(nums []int32) {
 
 	m.Bitmap = append(m.Bitmap, bm, r)
 	m.Polynomials = append(m.Polynomials, polys...)
+	m.Configs = append(m.Configs, configs...)
 	m.Residuals = append(m.Residuals, words...)
 }
 
-func newSeg(nums []int32, start int64) (uint64, []float64, []uint64) {
+func newSeg(nums []int32, start int64) (uint64, []float64, []uint64, []uint64) {
 
 	n := int32(len(nums))
 	xs := make([]float64, n)
@@ -343,6 +324,7 @@ func newSeg(nums []int32, start int64) (uint64, []float64, []uint64) {
 	spans := findMinFittingsNew(xs, ys, fts)
 
 	polys := make([]float64, 0)
+	configs := make([]uint64, 0)
 	words := make([]uint64, n) // max size
 
 	// Using a bitmap to describe which spans a polynomial spans
@@ -372,8 +354,8 @@ func newSeg(nums []int32, start int64) (uint64, []float64, []uint64) {
 		// min of stBySeg is -segmentSize * residualWidth = -1024 * 16;
 		// Add this value to make it a positive number.
 		offset := resI + start - int64(sp.s)*int64(width)
-		config := packConfig(offset+maxNegOffset, int64(width))
-		polys = append(polys, config)
+		confu64 := uint64(offset+maxNegOffset)<<8 | uint64(width)
+		configs = append(configs, confu64)
 
 		for j := sp.s; j < sp.e; j++ {
 
@@ -393,7 +375,7 @@ func newSeg(nums []int32, start int64) (uint64, []float64, []uint64) {
 
 	nWords := (resI + 63) >> 6
 
-	return segPolyBitmap, polys, words[:nWords]
+	return segPolyBitmap, polys, configs, words[:nWords]
 }
 
 func initFittings(xs, ys []float64, polysize int32) []*polyfit.Fitting {
@@ -531,11 +513,11 @@ func mergeTwoFitting(a, b *polyfit.Fitting) *polyfit.Fitting {
 	return f
 }
 
+// marginWidth calculate the minimal number of bits to store `margin`.
+// The returned number of bits is a power of 2: 2^k, e.g., 0, 1, 2, 4, 8...
+//
+// Since 0.1.1
 func marginWidth(margin int32) uint32 {
-	if margin >= 65536 {
-		panic(fmt.Sprintf("margin is too large: %d >= 2^16", margin))
-	}
-
 	// log(2, margin)
 	width := uint32(32 - bits.LeadingZeros32(uint32(margin)))
 

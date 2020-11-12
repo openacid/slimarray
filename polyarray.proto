@@ -16,11 +16,12 @@ message PolyArray {
 
     // Polynomial and config of every span.
     // 3 doubles to represent a polynomial;
-    // The last double consists of two part:
-    //    the int part is residual width: 0, 1, 2, 4, 8 or 16;
-    //    the float part is offset, which is at most 2^36.
     repeated double Polynomials = 21;
 
+    // Config stores the offset of residuals in Residuals and the bit width to
+    // store a residual in a span.
+    repeated uint64 Configs = 22;
+
     // packed residuals for every elt.
-    repeated uint64 Residuals   = 22;
+    repeated uint64 Residuals   = 23;
 }

@@ -66,11 +66,6 @@ func TestMarginWidth(t *testing.T) {
 			"%d-th: input: %#v; want: %#v; got: %#v",
 			i+1, c.input, c.want, got)
 	}
-
-	ta.Panics(
-		func() {
-			marginWidth(int32(65536))
-		})
 }
 
 func TestPolyArray_New(t *testing.T) {
@@ -196,7 +191,7 @@ func TestPolyArray_Stat(t *testing.T) {
 		"elt_width": 3,
 		"mem_elts":  160,
 		"mem_total": st["mem_total"], // do not compare this
-		"spans/seg": 4,
+		"spans/seg": 2,
 		"bits/elt":  10,
 	}
 
