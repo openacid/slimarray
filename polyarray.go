@@ -542,7 +542,7 @@ func marginWidth(margin int32) uint32 {
 	// align width to 2^k:
 
 	// log(2, width-1)
-	lz := uint32(32 - uint32(bits.LeadingZeros32(width-1)))
+	lz := 32 - uint32(bits.LeadingZeros32(width-1))
 
 	return uint32(1) << lz
 }
