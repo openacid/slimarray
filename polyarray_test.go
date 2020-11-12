@@ -73,7 +73,7 @@ func TestMarginWidth(t *testing.T) {
 		})
 }
 
-func TestDense_New(t *testing.T) {
+func TestPolyArray_New(t *testing.T) {
 	ta := require.New(t)
 
 	cases := [][]int32{
@@ -103,7 +103,7 @@ func TestDense_New(t *testing.T) {
 	}
 }
 
-func TestNewDense_eltWidthSmall(t *testing.T) {
+func TestNewPolyArray_eltWidthSmall(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -119,7 +119,7 @@ func TestNewDense_eltWidthSmall(t *testing.T) {
 
 }
 
-func TestNewDense_default(t *testing.T) {
+func TestNewPolyArray_default(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -134,7 +134,7 @@ func TestNewDense_default(t *testing.T) {
 
 }
 
-func TestNewDense_big(t *testing.T) {
+func TestNewPolyArray_big(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -150,7 +150,7 @@ func TestNewDense_big(t *testing.T) {
 	}
 }
 
-func TestNewDense_largenum(t *testing.T) {
+func TestNewPolyArray_largenum(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -172,7 +172,7 @@ func TestNewDense_largenum(t *testing.T) {
 	}
 }
 
-func TestDense_Get_panic(t *testing.T) {
+func TestPolyArray_Get_panic(t *testing.T) {
 	ta := require.New(t)
 
 	a := NewPolyArray(polyTestNums)
@@ -184,7 +184,7 @@ func TestDense_Get_panic(t *testing.T) {
 	})
 }
 
-func TestDense_Stat(t *testing.T) {
+func TestPolyArray_Stat(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -196,14 +196,14 @@ func TestDense_Stat(t *testing.T) {
 		"elt_width": 3,
 		"mem_elts":  160,
 		"mem_total": st["mem_total"], // do not compare this
-		"polys/seg": 4,
+		"spans/seg": 4,
 		"bits/elt":  10,
 	}
 
 	ta.Equal(want, st)
 }
 
-func TestDense_marshalUnmarshal(t *testing.T) {
+func TestPolyArray_marshalUnmarshal(t *testing.T) {
 	ta := require.New(t)
 
 	a := NewPolyArray(polyTestNums)
@@ -224,7 +224,7 @@ func TestDense_marshalUnmarshal(t *testing.T) {
 
 var Output int
 
-func BenchmarkDense_Get(b *testing.B) {
+func BenchmarkPolyArray_Get(b *testing.B) {
 
 	n := int32(1024 * 1024)
 	mask := int(n - 1)
@@ -245,7 +245,7 @@ func BenchmarkDense_Get(b *testing.B) {
 	Output = int(s)
 }
 
-func BenchmarkNewDense(b *testing.B) {
+func BenchmarkNewPolyArray(b *testing.B) {
 
 	n := int32(1024 * 1024)
 	step := int32(128)

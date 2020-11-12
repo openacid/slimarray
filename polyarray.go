@@ -1,3 +1,128 @@
+// package polyarray uses one or more polynomial to compress and store an array of int32.
+//
+// The general idea
+//
+// We use a polynomial y = a + bx + cx² to describe the overall trend of the
+// numbers.
+// And for every number i we add a residual to fit the gap between y(i) and
+// nums[i].
+// E.g. If there are 4 numbers: 0, 15, 33, 50
+// The polynomial and residuals are:
+//     y = 16x
+//     0, -1, 1, 2
+//
+// In this case the residuals require 3 bits for each of them.
+// To retrieve the numbers, we evaluate y(i) and add the residual to it:
+//     get(0) = y(0) + 0 = 16 * 0 + 0 = 0
+//     get(1) = y(1) - 1 = 16 * 1 - 1 = 15
+//     get(2) = y(2) + 1 = 16 * 2 + 1 = 33
+//     get(3) = y(3) + 2 = 16 * 3 + 2 = 50
+//
+// Data structure
+//
+// PolyArray splits the entire array into segments(Seg),
+// each of which has 1024 numbers.
+// And then it splits every segment into several spans.
+// Every span has its own polynomial. A span has 16*k numbers.
+// A segment has at most 64 spans.
+//
+//           seg[0]                      seg[1]
+//           1024 nums                   1024 nums
+//   |-------+---------------+---|---------------------------|...
+//    span[0]    span[1]
+//    16 nums    32 nums      ..
+//
+//
+// Uncompacted data structures
+//
+// A PolyArray is a compacted data structure.
+// The original data structures are defined as follow(assumes original user data
+// is `nums []int32`):
+//
+//   Seg strcut {
+//     SpansBitmap   uint64      // describe span layout
+//     OnesCount     uint64      // count `1` in preceding Seg.
+//     Spans       []Span
+//   }
+//
+//   Span struct {
+//     width         int32       // is retrieved from SpansBitmap
+//
+//     Polynomial [3]double      //
+//     Config strcut {           //
+//       Offset        int32     // residual offset
+//       ResidualWidth int32     // number of bits a residual requires
+//     }
+//     Residuals  [width][ResidualWidth]bit // pack into PolyArray.Residuals
+//   }
+//
+// A span stores 16*k int32 in it, where k ∈ [1, 64).
+//
+// `Seg.SpansBitmap` describes the layout of Span-s in a Seg.
+// A "1" at i-th bit and a "1" at j-th bit means a Span stores
+// `nums[i*16:j*16]`, e.g.:
+//
+//     100101110000......
+//     <-- least significant bit
+//
+// In the above example:
+//
+//     span[0] has 16*3 nums in it.
+//     span[1] has 16*2 nums in it.
+//     span[2] has 16*1 nums in it.
+//
+// `Seg.OnesCount` caches the total count of "1" in all preceding Seg.SpansBitmap.
+// This accelerate locating a Span in the packed field PolyArray.Polynomials .
+//
+// `Span.width` is the count of numbers stored in this span.
+// It does not need to be stored because it can be calculated by counting the
+// "0" between two "1" in `Seg.SpansBitmap`.
+//
+// `Span.Polynomial` stores 3 coefficients of the polynomial describing the
+// overall trend of this span. I.e. the `[a, b, c]` in `y = a + bx + cx²`
+//
+// `Span.Config.Offset` adjust the offset to locate a residual.
+//
+// `Span.Config.ResidualWidth` specifies the number of bits to
+// store every residual in this span, it must be a power of 2: `2^k`.
+//
+// With Offset = 123, ResidualWidth = 4, then the packed config is a double
+// value:
+// 2^14 + 4 + 123 / 2^36 = 16388.0000000017899
+//
+// A double value has 52 bit for Significand field, thus a double has enough
+// capacity to store a Config.
+//
+// `Span.Residuals` is an array of residuals of length `Span.width`.
+// Every elt in it is a `ResidualWidth`-bits integers.
+//
+// Compact
+//
+// PolyArray compact `Seg` into a dense format:
+//
+//   PolyArray.Bitmap = [
+//     Seg[0].SpansBitmap,
+//     Seg[0].OnesCount,
+//     Seg[1].SpansBitmap,
+//     Seg[1].OnesCount,
+//     ... ]
+//
+//   PolyArray.Polynomials = [
+//     Seg[0].Spans[0].Polynomials,
+//     Seg[0].Spans[0].Config,
+//     Seg[0].Spans[1].Polynomials,
+//     Seg[0].Spans[1].Config,
+//     ...
+//     Seg[1].Spans[0].Polynomials,
+//     Seg[1].Spans[0].Config,
+//     Seg[1].Spans[1].Polynomials,
+//     Seg[1].Spans[1].Config,
+//     ...
+//   ]
+//
+// `PolyArray.Residuals` simply packs the residuals of every nums[i] together.
+//
+// Since 0.1.1
 package polyarray
 
 import (
@@ -11,20 +136,36 @@ import (
 )
 
 const (
+	// The max number of bits to store a residual.
 	maxResidualWidth = 16
-	minSpan          = int32(16)
 
-	segSize      = 1024
+	// The smallest span is 16 int32 numbers.
+	// Two adjacent span will be merged into one if the result span costs less
+	// memory.
+	minSpan = int32(16)
+
+	// Segment size. A segment consists of at most 64 spans.
+	segSize = 1024
+
+	// log(2, segSize) to speed up calc.
 	segSizeShift = uint(10)
 	segSizeMask  = int32(1024 - 1)
 
-	polyDegree      = 2
-	polyCoefCnt     = polyDegree + 1
+	// Degree of polynomial to describe overall trend in a span.
+	// We always use a polynomial of degree 2: y = a + bx + cx²
+	polyDegree = 2
+
+	// Count of coefficients of a polynomial.
+	polyCoefCnt = polyDegree + 1
+
+	// A span has 4 float64: 3 coefficients and 1 as placeholder of span config,
+	// see packConfig()
 	f64PerSpan      = polyCoefCnt + 1 // 3 coefficients and 1 config
 	f64PerSpanShift = 2
-	twoPow36        = float64(int64(1) << 36)
 
-	// In a segment we want:
+	twoPow36 = float64(int64(1) << 36)
+
+	// In a span we want:
 	//		residual position = offset + (i%1024) * residualWidth
 	// But if preceding span has smaller residual width, the "offset" could be
 	// negative, e.g.: span[0] has residual of width 0 and 16 residuals,
@@ -32,22 +173,19 @@ const (
 	// Then the "offset" of span[1] is -16*4 in order to satisify:
 	// (-16*4) + i * 4 is the correct residual position, for i in [16, 32).
 	maxNegOffset = int64(segSize) * int64(maxResidualWidth)
+	// TODO: negative float seems allright?
 )
 
 // evalpoly2 evaluates a polynomial with degree=2.
 //
-// Since 0.5.2
+// Since 0.1.1
 func evalpoly2(poly []float64, x float64) float64 {
 	return poly[0] + poly[1]*x + poly[2]*x*x
 }
 
 // NewPolyArray creates a "PolyArray" array from a slice of int32.
-// A "PolyArray" array uses polynomial curves to compress data.
 //
-// It is very efficient to store a serias integers with a overall trend, such as
-// a sorted array.
-//
-// Since 0.5.2
+// Since 0.1.1
 func NewPolyArray(nums []int32) *PolyArray {
 
 	pa := &PolyArray{
@@ -63,6 +201,7 @@ func NewPolyArray(nums []int32) *PolyArray {
 
 	// Add another empty word to avoid panic for residual of width = 0.
 	pa.Residuals = append(pa.Residuals, 0)
+	// shrink capacity to len.
 	pa.Residuals = append(pa.Residuals[:0:0], pa.Residuals...)
 
 	return pa
@@ -71,25 +210,27 @@ func NewPolyArray(nums []int32) *PolyArray {
 // Get returns the uncompressed int32 value.
 // A Get() costs about 11 ns
 //
-// Since 0.5.2
+// Since 0.1.1
 func (m *PolyArray) Get(i int32) int32 {
 
+	// The index of a segment
 	bitmapI := (i >> segSizeShift) << 1
-	polyBitmap, rank := m.Bitmap[bitmapI], m.Bitmap[bitmapI|1]
+	spansBitmap, rank := m.Bitmap[bitmapI], m.Bitmap[bitmapI|1]
 
 	i = i & segSizeMask
 	x := float64(i)
 
-	bm := polyBitmap & bitmap.Mask[i>>4]
-	polyI := int(rank) + bits.OnesCount64(bm)
+	// i>>4 is in-segment span index
+	bm := spansBitmap & bitmap.Mask[i>>4]
+	spanIdx := int(rank) + bits.OnesCount64(bm)
 
-	// evalpoly2(poly, x)
+	// eval y = a + bx + cx²
 
-	j := polyI << f64PerSpanShift
+	j := spanIdx << f64PerSpanShift
 	p := m.Polynomials
 	v := int32(p[j] + p[j+1]*x + p[j+2]*x*x)
 
-	// read the config of this polynomial:
+	// read the config of this Span:
 	// residualWidth: how many bits a residual needs.
 	// offset.
 
@@ -98,17 +239,18 @@ func (m *PolyArray) Get(i int32) int32 {
 	offset := int64((config-float64(residualWidth))*twoPow36) - maxNegOffset
 
 	// where the residual is
-	ibit := offset + int64(i)*residualWidth
+	resBitIdx := offset + int64(i)*residualWidth
 
-	d := m.Residuals[ibit>>6]
-	d = d >> uint(ibit&63)
+	// extract residual from packed []uint64
+	d := m.Residuals[resBitIdx>>6]
+	d = d >> uint(resBitIdx&63)
 
 	return v + int32(d&bitmap.Mask[residualWidth])
 }
 
 // Len returns number of elements.
 //
-// Since 0.5.2
+// Since 0.1.1
 func (m *PolyArray) Len() int {
 	return int(m.N)
 }
@@ -117,20 +259,20 @@ func (m *PolyArray) Len() int {
 //
 //    elt_width :8
 //    seg_cnt   :512
-//    polys/seg :7
+//    spans/seg :7
 //    mem_elts  :1048576
 //    mem_total :1195245
 //    bits/elt  :9
 //
-// Since 0.5.2
+// Since 0.1.1
 func (m *PolyArray) Stat() map[string]int32 {
 	nseg := len(m.Bitmap) / 2
 	totalmem := size.Of(m)
 
-	polyCnt := len(m.Polynomials) >> 2
+	spanCnt := len(m.Polynomials) >> 2
 	memWords := len(m.Residuals) * 8
 	widthAvg := 0
-	for i := 0; i < polyCnt; i++ {
+	for i := 0; i < spanCnt; i++ {
 		// get the last float64
 		_, w := unpackConfig(m.Polynomials[i*f64PerSpan+f64PerSpan-1])
 		widthAvg += int(w)
@@ -141,17 +283,17 @@ func (m *PolyArray) Stat() map[string]int32 {
 		n = 1
 	}
 
-	if polyCnt == 0 {
-		polyCnt = 1
+	if spanCnt == 0 {
+		spanCnt = 1
 	}
 
 	st := map[string]int32{
 		"seg_cnt":   int32(nseg),
-		"elt_width": int32(widthAvg / polyCnt),
+		"elt_width": int32(widthAvg / spanCnt),
 		"mem_total": int32(totalmem),
 		"mem_elts":  int32(memWords),
 		"bits/elt":  int32(totalmem * 8 / n),
-		"polys/seg": int32((polyCnt * 1000) / (nseg*1000 + 1)),
+		"spans/seg": int32((spanCnt * 1000) / (nseg*1000 + 1)),
 	}
 
 	return st
@@ -277,7 +419,9 @@ type span struct {
 	poly          []float64
 	residualWidth uint32
 	mem           int
-	s, e          int32
+
+	// start and end index in original []int32
+	s, e int32
 }
 
 func (sp span) String() string {
@@ -302,7 +446,7 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []span {
 
 		e = s + int32(ft.N)
 
-		sp := estimatePoly(xs, ys, ft, s, e)
+		sp := newSpan(xs, ys, ft, s, e)
 		spans[i] = sp
 		s = e
 	}
@@ -354,14 +498,14 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []span {
 
 func mergeTwoSpan(xs, ys []float64, a, b span) span {
 	ft := mergeTwoFitting(a.ft, b.ft)
-	sp := estimatePoly(xs, ys, ft, a.s, b.e)
+	sp := newSpan(xs, ys, ft, a.s, b.e)
 	return sp
 }
 
-func estimatePoly(xs, ys []float64, ft *polyfit.Fitting, s, e int32) span {
+func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) span {
 
 	poly := ft.Solve()
-	max, min := maxminResiduals(poly, xs[s:e], ys[s:e])
+	max, min := maxMinResiduals(poly, xs[s:e], ys[s:e])
 	margin := int32(math.Ceil(max - min))
 	poly[0] += min
 
@@ -404,10 +548,10 @@ func memCost(poly []float64, residualWidth uint32, n int32) int {
 	return mm
 }
 
-// maxminResiduals finds max and min residuals along a curve.
+// maxMinResiduals finds max and min residuals along a curve.
 //
-// Since 0.5.2
-func maxminResiduals(poly, xs, ys []float64) (float64, float64) {
+// Since 0.1.1
+func maxMinResiduals(poly, xs, ys []float64) (float64, float64) {
 
 	max, min := float64(0), float64(0)
 
