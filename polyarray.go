@@ -532,13 +532,19 @@ func mergeTwoFitting(a, b *polyfit.Fitting) *polyfit.Fitting {
 }
 
 func marginWidth(margin int32) uint32 {
-	for _, width := range []uint32{0, 1, 2, 4, 8, 16} {
-		if int32(1)<<width > margin {
-			return width
-		}
+	if margin >= 65536 {
+		panic(fmt.Sprintf("margin is too large: %d >= 2^16", margin))
 	}
 
-	panic(fmt.Sprintf("margin is too large: %d >= 2^16", margin))
+	// log(2, margin)
+	width := uint32(32 - bits.LeadingZeros32(uint32(margin)))
+
+	// align width to 2^k:
+
+	// log(2, width-1)
+	lz := uint32(32 - uint32(bits.LeadingZeros32(width-1)))
+
+	return uint32(1) << lz
 }
 
 func memCost(poly []float64, residualWidth uint32, n int32) int {
