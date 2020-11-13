@@ -1,4 +1,6 @@
-// package polyarray uses one or more polynomial to compress and store an array of int32.
+// package polyarray uses polynomial to compress and store an array of uint32.
+// A uint32 costs only 5 bits in a sorted array of a million number in range [0,
+// 1000*1000].
 //
 // The general idea
 //
@@ -37,7 +39,7 @@
 //
 // A PolyArray is a compacted data structure.
 // The original data structures are defined as follow(assumes original user data
-// is `nums []int32`):
+// is `nums []uint32`):
 //
 //   Seg strcut {
 //     SpansBitmap   uint64      // describe span layout
@@ -142,7 +144,7 @@ import (
 )
 
 const (
-	// The smallest span is 16 int32 numbers.
+	// The smallest span is 16 numbers.
 	// Two adjacent span will be merged into one if the result span costs less
 	// memory.
 	minSpan = int32(16)
@@ -169,7 +171,7 @@ func evalpoly2(poly []float64, x float64) float64 {
 	return poly[0] + poly[1]*x + poly[2]*x*x
 }
 
-// NewPolyArray creates a "PolyArray" array from a slice of int32.
+// NewPolyArray creates a "PolyArray" array from a slice of uint32.
 //
 // Since 0.1.1
 func NewPolyArray(nums []uint32) *PolyArray {
@@ -193,7 +195,7 @@ func NewPolyArray(nums []uint32) *PolyArray {
 	return pa
 }
 
-// Get returns the uncompressed int32 value.
+// Get returns the uncompressed uint32 value.
 // A Get() costs about 10 ns
 //
 // Since 0.1.1

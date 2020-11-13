@@ -18,7 +18,21 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-// PolyArray
+// PolyArray compresses a uint32 array with overall trend by describing the trend
+// with a polynomial, e.g., to store a sorted array is very common in practice.
+// Such as an block-list of IP addresses, or a series of var-length record
+// position on disk.
+//
+// E.g. a uint32 costs only 5 bits in average in a sorted array of a million
+// number in range [0, 1000*1000].
+//
+// In addition to the unbelievable low memory footprint,
+// a `Get` access is also very fast: it takes only 10 nano second in our
+// benchmark.
+//
+// PolyArray is also ready for transport since it is defined with protobuf. E.g.:
+//    a := polyarray.NewPolyArray([]uint32{1, 2, 3})
+//    bytes, err := proto.Marshal(a)
 //
 // Since 0.1.1
 type PolyArray struct {
@@ -44,7 +58,7 @@ func (m *PolyArray) Reset()         { *m = PolyArray{} }
 func (m *PolyArray) String() string { return proto.CompactTextString(m) }
 func (*PolyArray) ProtoMessage()    {}
 func (*PolyArray) Descriptor() ([]byte, []int) {
-	return fileDescriptor_polyarray_b351f08e967f02cf, []int{0}
+	return fileDescriptor_polyarray_6d013d7a3e4a3357, []int{0}
 }
 func (m *PolyArray) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PolyArray.Unmarshal(m, b)
@@ -103,9 +117,9 @@ func init() {
 	proto.RegisterType((*PolyArray)(nil), "PolyArray")
 }
 
-func init() { proto.RegisterFile("polyarray.proto", fileDescriptor_polyarray_b351f08e967f02cf) }
+func init() { proto.RegisterFile("polyarray.proto", fileDescriptor_polyarray_6d013d7a3e4a3357) }
 
-var fileDescriptor_polyarray_b351f08e967f02cf = []byte{
+var fileDescriptor_polyarray_6d013d7a3e4a3357 = []byte{
 	// 156 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2f, 0xc8, 0xcf, 0xa9,
 	0x4c, 0x2c, 0x2a, 0x4a, 0xac, 0xd4, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x57, 0xea, 0x66, 0xe4, 0xe2,
