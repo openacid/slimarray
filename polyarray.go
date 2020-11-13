@@ -353,10 +353,6 @@ func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 			resI -= resI % int64(width)
 		}
 
-		if resI+start >= int64(1)<<35 {
-			panic(fmt.Sprintf("wordStart is too large:%d, should < 2^35", resI+start))
-		}
-
 		polys = append(polys, sp.poly...)
 
 		// We want eltIndex = stBySeg + i * residualWidth
@@ -422,10 +418,6 @@ func (sp span) String() string {
 // findMinFittingsNew by merge adjacent 16-numbers span.
 // If two spans has a common trend they should be described with one polynomial.
 func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []span {
-
-	if len(fts) == 0 {
-		return []span{}
-	}
 
 	spans := make([]span, len(fts))
 	merged := make([]span, len(fts)-1)

@@ -83,9 +83,16 @@ fix:
 	unconvert -v -apply $(PKGS)
 
 
+# local coverage
+coverage:
+	$(GO) test -covermode=count -coverprofile=coverage.out $(PKGS)
+	go tool cover -func=coverage.out
+	# go tool cover -html=coverage.out
+
+# send coverage to coveralls
 coveralls:
 	$(GO) get golang.org/x/tools/cmd/cover
 	$(GO) get github.com/mattn/goveralls
 	$(GO) test -covermode=count -coverprofile=coverage.out $(PKGS)
-	goveralls -coverprofile=coverage.out -service=travis-ci
+	goveralls -ignore='polyarray.pb.go' -coverprofile=coverage.out -service=travis-ci
 	# goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $$COVERALLS_TOKEN

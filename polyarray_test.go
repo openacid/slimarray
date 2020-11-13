@@ -186,6 +186,8 @@ func TestNewPolyArray_bigResidual_zipzag(t *testing.T) {
 
 func TestNewPolyArray_bigResidual_rand(t *testing.T) {
 
+	// unsorted rand large array
+
 	ta := require.New(t)
 
 	big := uint32(0xffffffff)
@@ -278,6 +280,22 @@ func testGet(ta *require.Assertions, a *PolyArray, nums []uint32) {
 		ta.Equal(n, r, "i=%d expect: %v; but: %v", i, n, r)
 	}
 	ta.Equal(len(nums), a.Len())
+}
+
+func TestSpan_String(t *testing.T) {
+
+	ta := require.New(t)
+
+	sp := span{
+		poly:          []float64{1, 2, 3},
+		residualWidth: 1,
+		mem:           3,
+		s:             1,
+		e:             2,
+	}
+
+	s := sp.String()
+	ta.Equal("1-2(1): width: 1, mem: 3, poly: [1 2 3]", s)
 }
 
 var Output int
