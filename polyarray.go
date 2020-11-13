@@ -2,7 +2,7 @@
 // A uint32 costs only 5 bits in a sorted array of a million number in range [0,
 // 1000*1000].
 //
-// The general idea
+// The General Idea
 //
 // We use a polynomial y = a + bx + cx² to describe the overall trend of the
 // numbers.
@@ -20,7 +20,22 @@
 //     get(2) = y(2) + 1 = 16 * 2 + 1 = 33
 //     get(3) = y(3) + 2 = 16 * 3 + 2 = 50
 //
-// Data structure
+//
+// What It Is And What It Is Not
+//
+// Another space efficient data structure to store uint32 array is trie or prefix
+// tree or radix tree. It is possible to use bitmap-based btree like structure
+// to reduce space(very likely in such case it provides higher compression rate).
+// But it requires the array to be sorted.
+//
+// PolyArray does not have such restriction. It is more adaptive with data
+// layout. To achieve high compression rate, it only requires the data has a
+// overall trend, e.g., roughly sorted, as seen in the above 4 integers
+// examples. Additionally, it also accept duplicated element in the array, which
+// a bitmap based or tree-like data structure does not allow.
+//
+//
+// Data Structure
 //
 // PolyArray splits the entire array into segments(Seg),
 // each of which has 1024 numbers.
@@ -35,7 +50,7 @@
 //    16 nums    32 nums      ..
 //
 //
-// Uncompacted data structures
+// Uncompacted Data Structures
 //
 // A PolyArray is a compacted data structure.
 // The original data structures are defined as follow(assumes original user data
@@ -90,8 +105,8 @@
 // But if the preceding span has smaller residual width, the "offset" could be
 // negative, e.g.: span[0] has residual of width 0 and 16 residuals,
 // span[1] has residual of width 4.
-// Then the "offset" of span[1] is -16*4 in order to satisify:
-// (-16*4) + i * 4 is the correct residual position, for i in [16, 32).
+// Then the "offset" of span[1] is `-16*4` in order to satisify:
+// `(-16*4) + i * 4` is the correct residual position, for i in [16, 32).
 //
 // `Span.Config.ResidualWidth` specifies the number of bits to
 // store every residual in this span, it must be a power of 2: `2^k`.
@@ -129,8 +144,6 @@
 //   ]
 //
 // `PolyArray.Residuals` simply packs the residuals of every nums[i] together.
-//
-// Since 0.1.1
 package polyarray
 
 import (

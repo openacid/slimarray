@@ -66,7 +66,13 @@ ben: test
 gen:
 	$(GO) generate ./...
 
-readme:
+doc:
+	# $(GO) get github.com/robertkrimen/godocdown/godocdown
+	godocdown . > docs/polyarray.md
+	cat docs/polyarray.md | awk '/^package /,/^## Usage/' | grep -v '^## Usage' > docs/polyarray-package.md
+
+
+readme: doc
 	python ./scripts/build_readme.py
 	# brew install nodejs
 	# npm install -g doctoc

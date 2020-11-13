@@ -2,13 +2,17 @@
 
 [![Travis](https://travis-ci.com/openacid/polyarray.svg?branch=main)](https://travis-ci.com/openacid/polyarray)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/m0vvvrru7a1g4mae/branch/main?svg=true)](https://ci.appveyor.com/project/drmingdrmer/polyarray/branch/main)
-[![GoDoc](https://godoc.org/github.com/openacid/polyarray?status.svg)](http://godoc.org/github.com/openacid/polyarray)
+![test](https://github.com/openacid/polyarray/workflows/test/badge.svg)
+
 [![Report card](https://goreportcard.com/badge/github.com/openacid/polyarray)](https://goreportcard.com/report/github.com/openacid/polyarray)
-[![GolangCI](https://golangci.com/badges/github.com/openacid/polyarray.svg)](https://golangci.com/r/github.com/openacid/polyarray)
-[![Sourcegraph](https://sourcegraph.com/github.com/openacid/polyarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/polyarray?badge)
 [![Coverage Status](https://coveralls.io/repos/github/openacid/polyarray/badge.svg?branch=main)](https://coveralls.io/github/openacid/polyarray?branch=main)
 
-PolyArray takes only **4 bit** to store an `int32` in an array with an overall trend.
+[![GoDoc](https://godoc.org/github.com/openacid/polyarray?status.svg)](http://godoc.org/github.com/openacid/polyarray)
+[![Sourcegraph](https://sourcegraph.com/github.com/openacid/polyarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/polyarray?badge)
+
+PolyArray: space efficient `uint32` array.
+It uses polynomial to compress and store an array.
+A `uint32` costs only **5 bits** in a sorted array of a million number in range `[0, 1000*1000]`(17% of original data).
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -17,6 +21,32 @@ PolyArray takes only **4 bit** to store an `int32` in an array with an overall t
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+# Why
+
+- **Space efficient**: In a sorted array, an elt only takes about **10 bits** to
+    store a 32-bit int.
+
+{% include 'docs/report-stat.md' %}
+
+- **Fast access**: A `Get` takes 10 ns. Run and see the benchmark: `go test . -bench=.`.
+
+- **Adaptive**: It does not require the data to be totally sorted to compress
+    it. E.g., PolyArray is perfect to store online user histogram data.
+
+
+# What It Is And What It Is Not
+
+Another space efficient data structure to store uint32 array is trie(Aka prefix
+tree or radix tree). It is possible to use bitmap-based btree like structure
+to reduce space(very likely in such case it provides higher compression rate).
+But it requires the array to be **sorted**.
+
+PolyArray does not have such restriction. It is more adaptive with data
+layout. To achieve high compression rate, it only requires the data has a
+overall trend, e.g., **roughly sorted**.
+
+Additionally, it also accept duplicated element in the array, which
+a bitmap based or tree-like data structure does not allow.
 
 # Install
 
@@ -26,8 +56,12 @@ go get github.com/openacid/polyarray
 
 # Synopsis
 
-## Fit points with a polynomial
+## Build a PolyArray
 
 ```go
-{% include 'polyfit/example_polyfit_test.go' %}
+{% include 'example_polyarray_test.go' %}
 ```
+
+# How it works
+
+{% include 'docs/polyarray-package.md' %}

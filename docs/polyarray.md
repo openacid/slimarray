@@ -1,143 +1,6 @@
 # polyarray
-
-[![Travis](https://travis-ci.com/openacid/polyarray.svg?branch=main)](https://travis-ci.com/openacid/polyarray)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/m0vvvrru7a1g4mae/branch/main?svg=true)](https://ci.appveyor.com/project/drmingdrmer/polyarray/branch/main)
-![test](https://github.com/openacid/polyarray/workflows/test/badge.svg)
-
-[![Report card](https://goreportcard.com/badge/github.com/openacid/polyarray)](https://goreportcard.com/report/github.com/openacid/polyarray)
-[![Coverage Status](https://coveralls.io/repos/github/openacid/polyarray/badge.svg?branch=main)](https://coveralls.io/github/openacid/polyarray?branch=main)
-
-[![GoDoc](https://godoc.org/github.com/openacid/polyarray?status.svg)](http://godoc.org/github.com/openacid/polyarray)
-[![Sourcegraph](https://sourcegraph.com/github.com/openacid/polyarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/polyarray?badge)
-
-PolyArray: space efficient `uint32` array.
-It uses polynomial to compress and store an array.
-A `uint32` costs only **5 bits** in a sorted array of a million number in range `[0, 1000*1000]`(17% of original data).
-
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
-
-- [Why](#why)
-- [What It Is And What It Is Not](#what-it-is-and-what-it-is-not)
-- [Install](#install)
-- [Synopsis](#synopsis)
-  - [Build a PolyArray](#build-a-polyarray)
-- [How it works](#how-it-works)
-    - [The General Idea](#the-general-idea)
-    - [What It Is And What It Is Not](#what-it-is-and-what-it-is-not-1)
-    - [Data Structure](#data-structure)
-    - [Uncompacted Data Structures](#uncompacted-data-structures)
-    - [Compact](#compact)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-# Why
-
-- **Space efficient**: In a sorted array, an elt only takes about **10 bits** to
-    store a 32-bit int.
-
-```
-== Memory cost stats of sorted random uint array ==
-
-n=1000 rng=[0, 1000]:
-
-           n: 1000
-   mem_total: 824
-    bits/elt: 6
-
-n=1000000 rng=[0, 1000000]:
-
-           n: 1000000
-   mem_total: 702624
-    bits/elt: 5
-
-n=1000000 rng=[0, 1000000000]:
-
-           n: 1000000
-   mem_total: 2078304
-    bits/elt: 16
-```
-
-- **Fast access**: A `Get` takes 10 ns. Run and see the benchmark: `go test . -bench=.`.
-
-- **Adaptive**: It does not require the data to be totally sorted to compress
-    it. E.g., PolyArray is perfect to store online user histogram data.
-
-
-# What It Is And What It Is Not
-
-Another space efficient data structure to store uint32 array is trie(Aka prefix
-tree or radix tree). It is possible to use bitmap-based btree like structure
-to reduce space(very likely in such case it provides higher compression rate).
-But it requires the array to be **sorted**.
-
-PolyArray does not have such restriction. It is more adaptive with data
-layout. To achieve high compression rate, it only requires the data has a
-overall trend, e.g., **roughly sorted**.
-
-Additionally, it also accept duplicated element in the array, which
-a bitmap based or tree-like data structure does not allow.
-
-# Install
-
-```sh
-go get github.com/openacid/polyarray
-```
-
-# Synopsis
-
-## Build a PolyArray
-
-```go
-package polyarray_test
-
-import (
-	"fmt"
-
-	"github.com/openacid/polyarray"
-)
-
-func ExamplePolyArray() {
-
-	nums := []uint32{
-		0, 16, 32, 48, 64, 79, 95, 111, 126, 142, 158, 174, 190, 206, 222, 236,
-		252, 268, 275, 278, 281, 283, 285, 289, 296, 301, 304, 307, 311, 313, 318,
-		321, 325, 328, 335, 339, 344, 348, 353, 357, 360, 364, 369, 372, 377, 383,
-		387, 393, 399, 404, 407, 410, 415, 418, 420, 422, 426, 430, 434, 439, 444,
-		446, 448, 451, 456, 459, 462, 465, 470, 473, 479, 482, 488, 490, 494, 500,
-		506, 509, 513, 519, 521, 528, 530, 534, 537, 540, 544, 546, 551, 556, 560,
-		566, 568, 572, 574, 576, 580, 585, 588, 592, 594, 600, 603, 606, 608, 610,
-		614, 620, 623, 628, 630, 632, 638, 644, 647, 653, 658, 660, 662, 665, 670,
-		672, 676, 681, 683, 687, 689, 691, 693, 695, 697, 703, 706, 710, 715, 719,
-		722, 726, 731, 735, 737, 741, 748, 750, 753, 757, 763, 766, 768, 775, 777,
-		782, 785, 791, 795, 798, 800, 806, 811, 815, 818, 821, 824, 829, 832, 836,
-		838, 842, 846, 850, 855, 860, 865, 870, 875, 878, 882, 886, 890, 895, 900,
-		906, 910, 913, 916, 921, 925, 929, 932, 937, 940, 942, 944, 946, 952, 954,
-		956, 958, 962, 966, 968, 971, 975, 979, 983, 987, 989, 994, 997, 1000,
-	}
-
-	a := polyarray.NewPolyArray(nums)
-
-	fmt.Println("last elt is:", a.Get(int32(a.Len()-1)))
-
-	st := a.Stat()
-	for _, k := range []string{
-		"elt_width",
-		"mem_elts",
-		"bits/elt"} {
-		fmt.Printf("%10s : %d\n", k, st[k])
-	}
-
-	// Unordered output:
-	// last elt is: 1000
-	//  elt_width : 3
-	//   mem_elts : 112
-	//   bits/elt : 14
-}
-```
-
-# How it works
+--
+    import "github.com/openacid/polyarray"
 
 package polyarray uses polynomial to compress and store an array of uint32. A
 uint32 costs only 5 bits in a sorted array of a million number in range [0,
@@ -283,3 +146,175 @@ PolyArray compact `Seg` into a dense format:
     ]
 
 `PolyArray.Residuals` simply packs the residuals of every nums[i] together.
+
+## Usage
+
+#### type PolyArray
+
+```go
+type PolyArray struct {
+	// N is the count of elts
+	N int32 `protobuf:"varint,10,opt,name=N,proto3" json:"N,omitempty"`
+	// Every 1024 elts segment has a 64-bit bitmap to describe the spans in it,
+	// and another 64-bit rank: the count of `1` in preceding bitmaps.
+	Bitmap []uint64 `protobuf:"varint,20,rep,packed,name=Bitmap,proto3" json:"Bitmap,omitempty"`
+	// Polynomial and config of every span.
+	// 3 doubles to represent a polynomial;
+	Polynomials []float64 `protobuf:"fixed64,21,rep,packed,name=Polynomials,proto3" json:"Polynomials,omitempty"`
+	// Config stores the offset of residuals in Residuals and the bit width to
+	// store a residual in a span.
+	Configs []int64 `protobuf:"varint,22,rep,packed,name=Configs,proto3" json:"Configs,omitempty"`
+	// packed residuals for every elt.
+	Residuals            []uint64 `protobuf:"varint,23,rep,packed,name=Residuals,proto3" json:"Residuals,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+```
+
+PolyArray compresses a uint32 array with overall trend by describing the trend
+with a polynomial, e.g., to store a sorted array is very common in practice.
+Such as an block-list of IP addresses, or a series of var-length record position
+on disk.
+
+E.g. a uint32 costs only 5 bits in average in a sorted array of a million number
+in range [0, 1000*1000].
+
+In addition to the unbelievable low memory footprint, a `Get` access is also
+very fast: it takes only 10 nano second in our benchmark.
+
+PolyArray is also ready for transport since it is defined with protobuf. E.g.:
+
+    a := polyarray.NewPolyArray([]uint32{1, 2, 3})
+    bytes, err := proto.Marshal(a)
+
+Since 0.1.1
+
+#### func  NewPolyArray
+
+```go
+func NewPolyArray(nums []uint32) *PolyArray
+```
+NewPolyArray creates a "PolyArray" array from a slice of uint32.
+
+Since 0.1.1
+
+#### func (*PolyArray) Descriptor
+
+```go
+func (*PolyArray) Descriptor() ([]byte, []int)
+```
+
+#### func (*PolyArray) Get
+
+```go
+func (m *PolyArray) Get(i int32) uint32
+```
+Get returns the uncompressed uint32 value. A Get() costs about 10 ns
+
+Since 0.1.1
+
+#### func (*PolyArray) GetBitmap
+
+```go
+func (m *PolyArray) GetBitmap() []uint64
+```
+
+#### func (*PolyArray) GetConfigs
+
+```go
+func (m *PolyArray) GetConfigs() []int64
+```
+
+#### func (*PolyArray) GetN
+
+```go
+func (m *PolyArray) GetN() int32
+```
+
+#### func (*PolyArray) GetPolynomials
+
+```go
+func (m *PolyArray) GetPolynomials() []float64
+```
+
+#### func (*PolyArray) GetResiduals
+
+```go
+func (m *PolyArray) GetResiduals() []uint64
+```
+
+#### func (*PolyArray) Len
+
+```go
+func (m *PolyArray) Len() int
+```
+Len returns number of elements.
+
+Since 0.1.1
+
+#### func (*PolyArray) ProtoMessage
+
+```go
+func (*PolyArray) ProtoMessage()
+```
+
+#### func (*PolyArray) Reset
+
+```go
+func (m *PolyArray) Reset()
+```
+
+#### func (*PolyArray) Stat
+
+```go
+func (m *PolyArray) Stat() map[string]int32
+```
+Stat returns a map describing memory usage.
+
+    seg_cnt   :512         // segment count
+    elt_width :8           // average bits count per elt
+    span_cnt  :12          // total count of spans
+    spans/seg :7           // average span count per segment
+    mem_elts  :1048576     // memory cost for residuals
+    mem_total :1195245     // total memory cost
+    bits/elt  :9           // average memory cost per elt
+    n         :10          // total elt count
+
+Since 0.1.1
+
+#### func (*PolyArray) String
+
+```go
+func (m *PolyArray) String() string
+```
+
+#### func (*PolyArray) XXX_DiscardUnknown
+
+```go
+func (m *PolyArray) XXX_DiscardUnknown()
+```
+
+#### func (*PolyArray) XXX_Marshal
+
+```go
+func (m *PolyArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
+```
+
+#### func (*PolyArray) XXX_Merge
+
+```go
+func (dst *PolyArray) XXX_Merge(src proto.Message)
+```
+
+#### func (*PolyArray) XXX_Size
+
+```go
+func (m *PolyArray) XXX_Size() int
+```
+
+#### func (*PolyArray) XXX_Unmarshal
+
+```go
+func (m *PolyArray) XXX_Unmarshal(b []byte) error
+```
