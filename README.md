@@ -79,6 +79,10 @@ overall trend, e.g., **roughly sorted**.
 Additionally, it also accept duplicated element in the array, which
 a bitmap based or tree-like data structure does not allow.
 
+In the [ipv4-list](./example/iplist) example, we feed 450,000 ipv4 to PolyArray.
+We see that PolyArray costs as small as gzip-ed data(`2.1 MB vs 2.0 MB`),
+while it provides instance access to the data without decompressing it.
+
 # Install
 
 ```sh
