@@ -118,12 +118,12 @@
 //   ]
 //
 //   PolyArray.Configs = [
-//		Seg[0].Spans[0].Config
-//		Seg[0].Spans[1].Config
-//		...
-//		Seg[1].Spans[0].Config
-//		Seg[1].Spans[1].Config
-//		...
+//     Seg[0].Spans[0].Config
+//     Seg[0].Spans[1].Config
+//     ...
+//     Seg[1].Spans[0].Config
+//     Seg[1].Spans[1].Config
+//     ...
 //   ]
 //
 // `PolyArray.Residuals` simply packs the residuals of every nums[i] together.
@@ -239,19 +239,21 @@ func (m *PolyArray) Len() int {
 
 // Stat returns a map describing memory usage.
 //
-//    elt_width :8
-//    seg_cnt   :512
-//    spans/seg :7
-//    mem_elts  :1048576
-//    mem_total :1195245
-//    bits/elt  :9
+//    seg_cnt   :512         // segment count
+//    elt_width :8           // average bits count per elt
+//    span_cnt  :12          // total count of spans
+//    spans/seg :7           // average span count per segment
+//    mem_elts  :1048576     // memory cost for residuals
+//    mem_total :1195245     // total memory cost
+//    bits/elt  :9           // average memory cost per elt
+//    n         :10          // total elt count
 //
 // Since 0.1.1
 func (m *PolyArray) Stat() map[string]int32 {
 	nseg := len(m.Bitmap) / 2
 	totalmem := size.Of(m)
 
-	spanCnt := len(m.Polynomials) >> 2
+	spanCnt := len(m.Polynomials) / 3
 	memWords := len(m.Residuals) * 8
 	widthAvg := 0
 	for i := 0; i < spanCnt; i++ {
@@ -275,6 +277,8 @@ func (m *PolyArray) Stat() map[string]int32 {
 		"mem_elts":  int32(memWords),
 		"bits/elt":  int32(totalmem * 8 / n),
 		"spans/seg": int32((spanCnt * 1000) / (nseg*1000 + 1)),
+		"span_cnt":  int32(spanCnt),
+		"n":         int32(m.N),
 	}
 
 	return st
@@ -439,7 +443,7 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []span {
 			b := spans[i+1]
 			mr := merged[i]
 			reduced := a.mem + b.mem - mr.mem
-			if maxReduced < a.mem+b.mem-mr.mem {
+			if maxReduced < reduced {
 				maxI = i
 				maxReduced = reduced
 			}

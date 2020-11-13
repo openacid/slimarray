@@ -246,8 +246,10 @@ func TestPolyArray_Stat(t *testing.T) {
 		"seg_cnt":   1,
 		"elt_width": 3,
 		"mem_elts":  160,
+		"n":         354,
 		"mem_total": st["mem_total"], // do not compare this
-		"spans/seg": 2,
+		"spans/seg": 4,
+		"span_cnt":  5,
 		"bits/elt":  10,
 	}
 
