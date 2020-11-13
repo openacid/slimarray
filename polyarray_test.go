@@ -193,7 +193,7 @@ func TestNewPolyArray_bigResidual_rand(t *testing.T) {
 	ns := []uint32{}
 	n := 1024 * 1024
 	rnd := rand.New(rand.NewSource(time.Now().Unix()))
-	for i := 0; i < int(n); i++ {
+	for i := 0; i < n; i++ {
 		s := uint32(rnd.Float64() * float64(big))
 		ns = append(ns, s)
 	}

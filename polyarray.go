@@ -278,7 +278,7 @@ func (m *PolyArray) Stat() map[string]int32 {
 		"bits/elt":  int32(totalmem * 8 / n),
 		"spans/seg": int32((spanCnt * 1000) / (nseg*1000 + 1)),
 		"span_cnt":  int32(spanCnt),
-		"n":         int32(m.N),
+		"n":         m.N,
 	}
 
 	return st
