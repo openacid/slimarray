@@ -2,7 +2,9 @@ package polyarray
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	proto "github.com/golang/protobuf/proto"
 	// proto "google.golang.org/protobuf/proto"
@@ -173,6 +175,27 @@ func TestNewPolyArray_bigResidual_zipzag(t *testing.T) {
 		0, big, 0, 0,
 		0, 0, 0, 0,
 		0, big, 0, 0,
+	}
+
+	a := NewPolyArray(ns)
+	st := a.Stat()
+	fmt.Println(st)
+
+	testGet(ta, a, ns)
+}
+
+func TestNewPolyArray_bigResidual_rand(t *testing.T) {
+
+	ta := require.New(t)
+
+	big := uint32(0xffffffff)
+
+	ns := []uint32{}
+	n := 1024 * 1024
+	rnd := rand.New(rand.NewSource(time.Now().Unix()))
+	for i := 0; i < int(n); i++ {
+		s := uint32(rnd.Float64() * float64(big))
+		ns = append(ns, s)
 	}
 
 	a := NewPolyArray(ns)
