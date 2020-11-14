@@ -98,7 +98,7 @@ func TestSlimArray_New(t *testing.T) {
 	}
 }
 
-func TestNewSlimArray_eltWidthSmall(t *testing.T) {
+func TestSlimArray_eltWidthSmall(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -114,7 +114,7 @@ func TestNewSlimArray_eltWidthSmall(t *testing.T) {
 
 }
 
-func TestNewSlimArray_default(t *testing.T) {
+func TestSlimArray_default(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -129,7 +129,7 @@ func TestNewSlimArray_default(t *testing.T) {
 
 }
 
-func TestNewSlimArray_big(t *testing.T) {
+func TestSlimArray_big(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -144,7 +144,7 @@ func TestNewSlimArray_big(t *testing.T) {
 	testGet(ta, a, ns)
 }
 
-func TestNewSlimArray_bigResidual_lowhigh(t *testing.T) {
+func TestSlimArray_bigResidual_lowhigh(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -164,7 +164,7 @@ func TestNewSlimArray_bigResidual_lowhigh(t *testing.T) {
 	testGet(ta, a, ns)
 }
 
-func TestNewSlimArray_bigResidual_zipzag(t *testing.T) {
+func TestSlimArray_bigResidual_zipzag(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -184,7 +184,7 @@ func TestNewSlimArray_bigResidual_zipzag(t *testing.T) {
 	testGet(ta, a, ns)
 }
 
-func TestNewSlimArray_bigResidual_rand(t *testing.T) {
+func TestSlimArray_bigResidual_rand(t *testing.T) {
 
 	// unsorted rand large array
 
@@ -207,7 +207,7 @@ func TestNewSlimArray_bigResidual_rand(t *testing.T) {
 	testGet(ta, a, ns)
 }
 
-func TestNewSlimArray_largenum(t *testing.T) {
+func TestSlimArray_largenum(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -321,7 +321,7 @@ func BenchmarkSlimArray_Get(b *testing.B) {
 	Output = int(s)
 }
 
-func BenchmarkNewSlimArray(b *testing.B) {
+func BenchmarkNewU32(b *testing.B) {
 
 	n := int32(1024 * 1024)
 	step := int32(128)

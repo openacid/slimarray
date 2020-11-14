@@ -121,7 +121,7 @@ func ExampleSlimArray() {
 		956, 958, 962, 966, 968, 971, 975, 979, 983, 987, 989, 994, 997, 1000,
 	}
 
-	a := slimarray.NewSlimArray(nums)
+	a := slimarray.NewU32(nums)
 
 	fmt.Println("last elt is:", a.Get(int32(a.Len()-1)))
 

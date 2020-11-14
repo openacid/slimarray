@@ -187,17 +187,17 @@ very fast: it takes only 10 nano second in our benchmark.
 
 SlimArray is also ready for transport since it is defined with protobuf. E.g.:
 
-    a := slimarray.NewSlimArray([]uint32{1, 2, 3})
+    a := slimarray.NewU32([]uint32{1, 2, 3})
     bytes, err := proto.Marshal(a)
 
 Since 0.1.1
 
-#### func  NewSlimArray
+#### func  NewU32
 
 ```go
-func NewSlimArray(nums []uint32) *SlimArray
+func NewU32(nums []uint32) *SlimArray
 ```
-NewSlimArray creates a "SlimArray" array from a slice of uint32.
+NewU32 creates a "SlimArray" array from a slice of uint32.
 
 Since 0.1.1
 
