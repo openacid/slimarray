@@ -10,7 +10,7 @@
 [![GoDoc](https://godoc.org/github.com/openacid/slimarray?status.svg)](http://godoc.org/github.com/openacid/slimarray)
 [![Sourcegraph](https://sourcegraph.com/github.com/openacid/slimarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/slimarray?badge)
 
-SlimArray: space efficient `uint32` array.
+SlimArray: space efficient static `uint32` array.
 It uses polynomial to compress and store an array.
 A `uint32` costs only **5 bits** in a sorted array of a million number in range `[0, 1000*1000]`(17% of original data).
 
@@ -20,6 +20,7 @@ A `uint32` costs only **5 bits** in a sorted array of a million number in range 
 
 - [Why](#why)
 - [What It Is And What It Is Not](#what-it-is-and-what-it-is-not)
+- [Limitation](#limitation)
 - [Install](#install)
 - [Synopsis](#synopsis)
   - [Build a SlimArray](#build-a-slimarray)
@@ -64,6 +65,9 @@ n=1000000 rng=[0, 1000000000]:
 - **Adaptive**: It does not require the data to be totally sorted to compress
     it. E.g., SlimArray is perfect to store online user histogram data.
 
+- **Ready for transport**: slimarray is protobuf defined, and has the same structure in memory as
+on disk. No cost to load or dump.
+
 
 # What It Is And What It Is Not
 
@@ -82,6 +86,16 @@ a bitmap based or tree-like data structure does not allow.
 In the [ipv4-list](./example/iplist) example, we feed 450,000 ipv4 to SlimArray.
 We see that SlimArray costs as small as gzip-ed data(`2.1 MB vs 2.0 MB`),
 while it provides instance access to the data without decompressing it.
+
+
+# Limitation
+
+- **Static**: slimarray is a static data structure that can not be modified
+after creation. Thus slimarray is ideal for a time-series-database, i.e., data
+set is huge but never change.
+
+- **32 bits**: currently slimarray supports only one element type `uint32`.
+
 
 # Install
 
