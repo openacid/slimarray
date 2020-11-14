@@ -5,7 +5,7 @@
 ![test](https://github.com/openacid/polyarray/workflows/test/badge.svg)
 
 [![Report card](https://goreportcard.com/badge/github.com/openacid/polyarray)](https://goreportcard.com/report/github.com/openacid/polyarray)
-[![Coverage Status](https://coveralls.io/repos/github/openacid/polyarray/badge.svg?branch=main)](https://coveralls.io/github/openacid/polyarray?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/openacid/polyarray/badge.svg?branch=main&service=github)](https://coveralls.io/github/openacid/polyarray?branch=main&service=github)
 
 [![GoDoc](https://godoc.org/github.com/openacid/polyarray?status.svg)](http://godoc.org/github.com/openacid/polyarray)
 [![Sourcegraph](https://sourcegraph.com/github.com/openacid/polyarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/polyarray?badge)
