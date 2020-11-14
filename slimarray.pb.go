@@ -38,7 +38,7 @@ const _ = proto.ProtoPackageIsVersion4
 // benchmark.
 //
 // SlimArray is also ready for transport since it is defined with protobuf. E.g.:
-//    a := slimarray.NewSlimArray([]uint32{1, 2, 3})
+//    a := slimarray.NewU32([]uint32{1, 2, 3})
 //    bytes, err := proto.Marshal(a)
 //
 // Since 0.1.1

@@ -35,7 +35,7 @@ func ExampleSlimArray_Stat() {
 
 		sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
 
-		a := slimarray.NewSlimArray(nums)
+		a := slimarray.NewU32(nums)
 
 		st := a.Stat()
 		fmt.Printf("\nn=%d rng=[0, %d]:\n\n", n, rng)

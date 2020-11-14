@@ -184,10 +184,10 @@ func evalpoly2(poly []float64, x float64) float64 {
 	return poly[0] + poly[1]*x + poly[2]*x*x
 }
 
-// NewSlimArray creates a "SlimArray" array from a slice of uint32.
+// NewU32 creates a "SlimArray" array from a slice of uint32.
 //
 // Since 0.1.1
-func NewSlimArray(nums []uint32) *SlimArray {
+func NewU32(nums []uint32) *SlimArray {
 
 	pa := &SlimArray{
 		N: int32(len(nums)),

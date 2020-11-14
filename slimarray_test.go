@@ -89,7 +89,7 @@ func TestSlimArray_New(t *testing.T) {
 
 	for _, nums := range cases {
 
-		a := NewSlimArray(nums)
+		a := NewU32(nums)
 		testGet(ta, a, nums)
 
 		// Stat() should work
@@ -108,7 +108,7 @@ func TestNewSlimArray_eltWidthSmall(t *testing.T) {
 		nums[i] = uint32(15 * i)
 	}
 
-	a := NewSlimArray(nums)
+	a := NewU32(nums)
 	fmt.Println(a.Stat())
 	ta.True(a.Stat()["bits/elt"] <= 4)
 
@@ -118,7 +118,7 @@ func TestNewSlimArray_default(t *testing.T) {
 
 	ta := require.New(t)
 
-	a := NewSlimArray(testNums)
+	a := NewU32(testNums)
 	ta.Equal(int32(len(testNums)), a.N)
 
 	fmt.Println(a.Stat())
@@ -137,7 +137,7 @@ func TestNewSlimArray_big(t *testing.T) {
 	step := int32(64)
 	ns := testutil.RandU32Slice(0, n, step)
 
-	a := NewSlimArray(ns)
+	a := NewU32(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
@@ -157,7 +157,7 @@ func TestNewSlimArray_bigResidual_lowhigh(t *testing.T) {
 		big, big, big, big,
 	}
 
-	a := NewSlimArray(ns)
+	a := NewU32(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
@@ -177,7 +177,7 @@ func TestNewSlimArray_bigResidual_zipzag(t *testing.T) {
 		0, big, 0, 0,
 	}
 
-	a := NewSlimArray(ns)
+	a := NewU32(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
@@ -200,7 +200,7 @@ func TestNewSlimArray_bigResidual_rand(t *testing.T) {
 		ns = append(ns, s)
 	}
 
-	a := NewSlimArray(ns)
+	a := NewU32(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
@@ -221,14 +221,14 @@ func TestNewSlimArray_largenum(t *testing.T) {
 		}
 	}
 
-	a := NewSlimArray(ns)
+	a := NewU32(ns)
 	testGet(ta, a, ns)
 }
 
 func TestSlimArray_Get_panic(t *testing.T) {
 	ta := require.New(t)
 
-	a := NewSlimArray(testNums)
+	a := NewU32(testNums)
 	ta.Panics(func() {
 		a.Get(int32(len(testNums) + 64))
 	})
@@ -241,7 +241,7 @@ func TestSlimArray_Stat(t *testing.T) {
 
 	ta := require.New(t)
 
-	a := NewSlimArray(testNums)
+	a := NewU32(testNums)
 
 	st := a.Stat()
 	want := map[string]int32{
@@ -261,7 +261,7 @@ func TestSlimArray_Stat(t *testing.T) {
 func TestSlimArray_marshalUnmarshal(t *testing.T) {
 	ta := require.New(t)
 
-	a := NewSlimArray(testNums)
+	a := NewU32(testNums)
 
 	bytes, err := proto.Marshal(a)
 	ta.Nil(err, "want no error but: %+v", err)
@@ -309,7 +309,7 @@ func BenchmarkSlimArray_Get(b *testing.B) {
 
 	s := uint32(0)
 
-	a := NewSlimArray(ns)
+	a := NewU32(ns)
 	fmt.Println(a.Stat())
 
 	b.ResetTimer()
@@ -332,7 +332,7 @@ func BenchmarkNewSlimArray(b *testing.B) {
 	b.ResetTimer()
 	var a *SlimArray
 	for i := 0; i < b.N; i++ {
-		a = NewSlimArray(ns)
+		a = NewU32(ns)
 		s += a.Get(int32(0))
 	}
 

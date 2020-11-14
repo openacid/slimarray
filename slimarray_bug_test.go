@@ -208,7 +208,7 @@ func TestSlimArray_bug_start_overflow_2019_06_08(t *testing.T) {
 
 	nums := bug70KNums
 
-	a := NewSlimArray(nums)
+	a := NewU32(nums)
 	for i, n := range nums {
 		r := a.Get(int32(i))
 		ta.Equal(n, r, "i=%d", i)
