@@ -1,4 +1,4 @@
-package polyarray
+package slimarray
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var polyTestNums []uint32 = []uint32{
+var testNums []uint32 = []uint32{
 	0, 16, 32, 48, 64, 79, 95, 111, 126, 142, 158, 174, 190, 206, 222, 236,
 	252, 268, 275, 278, 281, 283, 285, 289, 296, 301, 304, 307, 311, 313, 318,
 	321, 325, 328, 335, 339, 344, 348, 353, 357, 360, 364, 369, 372, 377, 383,
@@ -73,7 +73,7 @@ func TestMarginWidth(t *testing.T) {
 	}
 }
 
-func TestPolyArray_New(t *testing.T) {
+func TestSlimArray_New(t *testing.T) {
 	ta := require.New(t)
 
 	cases := [][]uint32{
@@ -81,15 +81,15 @@ func TestPolyArray_New(t *testing.T) {
 		{0},
 		{1},
 		{1, 2},
-		polyTestNums[:10],
-		polyTestNums[:50],
-		polyTestNums[:200],
-		polyTestNums,
+		testNums[:10],
+		testNums[:50],
+		testNums[:200],
+		testNums,
 	}
 
 	for _, nums := range cases {
 
-		a := NewPolyArray(nums)
+		a := NewSlimArray(nums)
 		testGet(ta, a, nums)
 
 		// Stat() should work
@@ -98,7 +98,7 @@ func TestPolyArray_New(t *testing.T) {
 	}
 }
 
-func TestNewPolyArray_eltWidthSmall(t *testing.T) {
+func TestNewSlimArray_eltWidthSmall(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -108,18 +108,18 @@ func TestNewPolyArray_eltWidthSmall(t *testing.T) {
 		nums[i] = uint32(15 * i)
 	}
 
-	a := NewPolyArray(nums)
+	a := NewSlimArray(nums)
 	fmt.Println(a.Stat())
 	ta.True(a.Stat()["bits/elt"] <= 4)
 
 }
 
-func TestNewPolyArray_default(t *testing.T) {
+func TestNewSlimArray_default(t *testing.T) {
 
 	ta := require.New(t)
 
-	a := NewPolyArray(polyTestNums)
-	ta.Equal(int32(len(polyTestNums)), a.N)
+	a := NewSlimArray(testNums)
+	ta.Equal(int32(len(testNums)), a.N)
 
 	fmt.Println(a.Stat())
 	st := a.Stat()
@@ -129,7 +129,7 @@ func TestNewPolyArray_default(t *testing.T) {
 
 }
 
-func TestNewPolyArray_big(t *testing.T) {
+func TestNewSlimArray_big(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -137,14 +137,14 @@ func TestNewPolyArray_big(t *testing.T) {
 	step := int32(64)
 	ns := testutil.RandU32Slice(0, n, step)
 
-	a := NewPolyArray(ns)
+	a := NewSlimArray(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
 	testGet(ta, a, ns)
 }
 
-func TestNewPolyArray_bigResidual_lowhigh(t *testing.T) {
+func TestNewSlimArray_bigResidual_lowhigh(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -157,14 +157,14 @@ func TestNewPolyArray_bigResidual_lowhigh(t *testing.T) {
 		big, big, big, big,
 	}
 
-	a := NewPolyArray(ns)
+	a := NewSlimArray(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
 	testGet(ta, a, ns)
 }
 
-func TestNewPolyArray_bigResidual_zipzag(t *testing.T) {
+func TestNewSlimArray_bigResidual_zipzag(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -177,14 +177,14 @@ func TestNewPolyArray_bigResidual_zipzag(t *testing.T) {
 		0, big, 0, 0,
 	}
 
-	a := NewPolyArray(ns)
+	a := NewSlimArray(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
 	testGet(ta, a, ns)
 }
 
-func TestNewPolyArray_bigResidual_rand(t *testing.T) {
+func TestNewSlimArray_bigResidual_rand(t *testing.T) {
 
 	// unsorted rand large array
 
@@ -200,14 +200,14 @@ func TestNewPolyArray_bigResidual_rand(t *testing.T) {
 		ns = append(ns, s)
 	}
 
-	a := NewPolyArray(ns)
+	a := NewSlimArray(ns)
 	st := a.Stat()
 	fmt.Println(st)
 
 	testGet(ta, a, ns)
 }
 
-func TestNewPolyArray_largenum(t *testing.T) {
+func TestNewSlimArray_largenum(t *testing.T) {
 
 	ta := require.New(t)
 
@@ -221,27 +221,27 @@ func TestNewPolyArray_largenum(t *testing.T) {
 		}
 	}
 
-	a := NewPolyArray(ns)
+	a := NewSlimArray(ns)
 	testGet(ta, a, ns)
 }
 
-func TestPolyArray_Get_panic(t *testing.T) {
+func TestSlimArray_Get_panic(t *testing.T) {
 	ta := require.New(t)
 
-	a := NewPolyArray(polyTestNums)
+	a := NewSlimArray(testNums)
 	ta.Panics(func() {
-		a.Get(int32(len(polyTestNums) + 64))
+		a.Get(int32(len(testNums) + 64))
 	})
 	ta.Panics(func() {
 		a.Get(int32(-1))
 	})
 }
 
-func TestPolyArray_Stat(t *testing.T) {
+func TestSlimArray_Stat(t *testing.T) {
 
 	ta := require.New(t)
 
-	a := NewPolyArray(polyTestNums)
+	a := NewSlimArray(testNums)
 
 	st := a.Stat()
 	want := map[string]int32{
@@ -258,23 +258,23 @@ func TestPolyArray_Stat(t *testing.T) {
 	ta.Equal(want, st)
 }
 
-func TestPolyArray_marshalUnmarshal(t *testing.T) {
+func TestSlimArray_marshalUnmarshal(t *testing.T) {
 	ta := require.New(t)
 
-	a := NewPolyArray(polyTestNums)
+	a := NewSlimArray(testNums)
 
 	bytes, err := proto.Marshal(a)
 	ta.Nil(err, "want no error but: %+v", err)
 
-	b := &PolyArray{}
+	b := &SlimArray{}
 
 	err = proto.Unmarshal(bytes, b)
 	ta.Nil(err, "want no error but: %+v", err)
 
-	testGet(ta, b, polyTestNums)
+	testGet(ta, b, testNums)
 }
 
-func testGet(ta *require.Assertions, a *PolyArray, nums []uint32) {
+func testGet(ta *require.Assertions, a *SlimArray, nums []uint32) {
 	for i, n := range nums {
 		r := a.Get(int32(i))
 		ta.Equal(n, r, "i=%d expect: %v; but: %v", i, n, r)
@@ -300,7 +300,7 @@ func TestSpan_String(t *testing.T) {
 
 var Output int
 
-func BenchmarkPolyArray_Get(b *testing.B) {
+func BenchmarkSlimArray_Get(b *testing.B) {
 
 	n := int32(1024 * 1024)
 	mask := int(n - 1)
@@ -309,7 +309,7 @@ func BenchmarkPolyArray_Get(b *testing.B) {
 
 	s := uint32(0)
 
-	a := NewPolyArray(ns)
+	a := NewSlimArray(ns)
 	fmt.Println(a.Stat())
 
 	b.ResetTimer()
@@ -321,7 +321,7 @@ func BenchmarkPolyArray_Get(b *testing.B) {
 	Output = int(s)
 }
 
-func BenchmarkNewPolyArray(b *testing.B) {
+func BenchmarkNewSlimArray(b *testing.B) {
 
 	n := int32(1024 * 1024)
 	step := int32(128)
@@ -330,9 +330,9 @@ func BenchmarkNewPolyArray(b *testing.B) {
 	s := uint32(0)
 
 	b.ResetTimer()
-	var a *PolyArray
+	var a *SlimArray
 	for i := 0; i < b.N; i++ {
-		a = NewPolyArray(ns)
+		a = NewSlimArray(ns)
 		s += a.Get(int32(0))
 	}
 

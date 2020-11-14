@@ -1,9 +1,9 @@
 # `grep -v` does not work on travis. No time to find out why -- xp 2019 Feb 22
-PKGS := $(shell go list ./... | grep -v "^github.com/openacid/polyarray/\(vendor\|prototype\)")
+PKGS := $(shell go list ./... | grep -v "^github.com/openacid/slimarray/\(vendor\|prototype\)")
 
-# PKGS := github.com/openacid/polyarray/array \
-#         github.com/openacid/polyarray/bit \
-#         github.com/openacid/polyarray/trie \
+# PKGS := github.com/openacid/slimarray/array \
+#         github.com/openacid/slimarray/bit \
+#         github.com/openacid/slimarray/trie \
 
 SRCDIRS := $(shell go list -f '{{.Dir}}' $(PKGS))
 
@@ -68,8 +68,8 @@ gen:
 
 doc:
 	# $(GO) get github.com/robertkrimen/godocdown/godocdown
-	godocdown . > docs/polyarray.md
-	cat docs/polyarray.md | awk '/^package /,/^## Usage/' | grep -v '^## Usage' > docs/polyarray-package.md
+	godocdown . > docs/slimarray.md
+	cat docs/slimarray.md | awk '/^package /,/^## Usage/' | grep -v '^## Usage' > docs/slimarray-package.md
 
 
 readme: doc

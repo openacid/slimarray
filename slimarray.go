@@ -1,4 +1,4 @@
-// package polyarray uses polynomial to compress and store an array of uint32.
+// package slimarray uses polynomial to compress and store an array of uint32.
 // A uint32 costs only 5 bits in a sorted array of a million number in range [0,
 // 1000*1000].
 //
@@ -28,7 +28,7 @@
 // to reduce space(very likely in such case it provides higher compression rate).
 // But it requires the array to be sorted.
 //
-// PolyArray does not have such restriction. It is more adaptive with data
+// SlimArray does not have such restriction. It is more adaptive with data
 // layout. To achieve high compression rate, it only requires the data has a
 // overall trend, e.g., roughly sorted, as seen in the above 4 integers
 // examples. Additionally, it also accept duplicated element in the array, which
@@ -37,7 +37,7 @@
 //
 // Data Structure
 //
-// PolyArray splits the entire array into segments(Seg),
+// SlimArray splits the entire array into segments(Seg),
 // each of which has 1024 numbers.
 // And then it splits every segment into several spans.
 // Every span has its own polynomial. A span has 16*k numbers.
@@ -52,7 +52,7 @@
 //
 // Uncompacted Data Structures
 //
-// A PolyArray is a compacted data structure.
+// A SlimArray is a compacted data structure.
 // The original data structures are defined as follow(assumes original user data
 // is `nums []uint32`):
 //
@@ -70,7 +70,7 @@
 //       Offset        int32     // residual offset
 //       ResidualWidth int32     // number of bits a residual requires
 //     }
-//     Residuals  [width][ResidualWidth]bit // pack into PolyArray.Residuals
+//     Residuals  [width][ResidualWidth]bit // pack into SlimArray.Residuals
 //   }
 //
 // A span stores 16*k int32 in it, where k ∈ [1, 64).
@@ -89,7 +89,7 @@
 //     span[2] has 16*1 nums in it.
 //
 // `Seg.OnesCount` caches the total count of "1" in all preceding Seg.SpansBitmap.
-// This accelerate locating a Span in the packed field PolyArray.Polynomials .
+// This accelerate locating a Span in the packed field SlimArray.Polynomials .
 //
 // `Span.width` is the count of numbers stored in this span.
 // It does not need to be stored because it can be calculated by counting the
@@ -116,16 +116,16 @@
 //
 // Compact
 //
-// PolyArray compact `Seg` into a dense format:
+// SlimArray compact `Seg` into a dense format:
 //
-//   PolyArray.Bitmap = [
+//   SlimArray.Bitmap = [
 //     Seg[0].SpansBitmap,
 //     Seg[0].OnesCount,
 //     Seg[1].SpansBitmap,
 //     Seg[1].OnesCount,
 //     ... ]
 //
-//   PolyArray.Polynomials = [
+//   SlimArray.Polynomials = [
 //     Seg[0].Spans[0].Polynomials,
 //     Seg[0].Spans[1].Polynomials,
 //     ...
@@ -134,7 +134,7 @@
 //     ...
 //   ]
 //
-//   PolyArray.Configs = [
+//   SlimArray.Configs = [
 //     Seg[0].Spans[0].Config
 //     Seg[0].Spans[1].Config
 //     ...
@@ -143,8 +143,8 @@
 //     ...
 //   ]
 //
-// `PolyArray.Residuals` simply packs the residuals of every nums[i] together.
-package polyarray
+// `SlimArray.Residuals` simply packs the residuals of every nums[i] together.
+package slimarray
 
 import (
 	"fmt"
@@ -153,7 +153,7 @@ import (
 
 	"github.com/openacid/low/bitmap"
 	"github.com/openacid/low/size"
-	"github.com/openacid/polyarray/polyfit"
+	"github.com/openacid/slimarray/polyfit"
 )
 
 const (
@@ -184,12 +184,12 @@ func evalpoly2(poly []float64, x float64) float64 {
 	return poly[0] + poly[1]*x + poly[2]*x*x
 }
 
-// NewPolyArray creates a "PolyArray" array from a slice of uint32.
+// NewSlimArray creates a "SlimArray" array from a slice of uint32.
 //
 // Since 0.1.1
-func NewPolyArray(nums []uint32) *PolyArray {
+func NewSlimArray(nums []uint32) *SlimArray {
 
-	pa := &PolyArray{
+	pa := &SlimArray{
 		N: int32(len(nums)),
 	}
 
@@ -212,7 +212,7 @@ func NewPolyArray(nums []uint32) *PolyArray {
 // A Get() costs about 10 ns
 //
 // Since 0.1.1
-func (m *PolyArray) Get(i int32) uint32 {
+func (m *SlimArray) Get(i int32) uint32 {
 
 	// The index of a segment
 	bitmapI := (i >> segSizeShift) << 1
@@ -248,7 +248,7 @@ func (m *PolyArray) Get(i int32) uint32 {
 // Len returns number of elements.
 //
 // Since 0.1.1
-func (m *PolyArray) Len() int {
+func (m *SlimArray) Len() int {
 	return int(m.N)
 }
 
@@ -264,7 +264,7 @@ func (m *PolyArray) Len() int {
 //    n         :10          // total elt count
 //
 // Since 0.1.1
-func (m *PolyArray) Stat() map[string]int32 {
+func (m *SlimArray) Stat() map[string]int32 {
 	nseg := len(m.Bitmap) / 2
 	totalmem := size.Of(m)
 
@@ -299,7 +299,7 @@ func (m *PolyArray) Stat() map[string]int32 {
 	return st
 }
 
-func (m *PolyArray) addSeg(nums []uint32) {
+func (m *SlimArray) addSeg(nums []uint32) {
 
 	bm, polys, configs, words := newSeg(nums, int64(len(m.Residuals)*64))
 

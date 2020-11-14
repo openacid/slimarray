@@ -3,7 +3,7 @@ package polyfit_test
 import (
 	"fmt"
 
-	. "github.com/openacid/polyarray/polyfit"
+	. "github.com/openacid/slimarray/polyfit"
 )
 
 func Example() {

@@ -1,14 +1,14 @@
-package polyarray_test
+package slimarray_test
 
 import (
 	"fmt"
 	"math/rand"
 	"sort"
 
-	"github.com/openacid/polyarray"
+	"github.com/openacid/slimarray"
 )
 
-func ExamplePolyArray_Stat() {
+func ExampleSlimArray_Stat() {
 
 	fmt.Println("== Memory cost stats of sorted random uint array ==")
 
@@ -35,7 +35,7 @@ func ExamplePolyArray_Stat() {
 
 		sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
 
-		a := polyarray.NewPolyArray(nums)
+		a := slimarray.NewSlimArray(nums)
 
 		st := a.Stat()
 		fmt.Printf("\nn=%d rng=[0, %d]:\n\n", n, rng)
@@ -54,18 +54,18 @@ func ExamplePolyArray_Stat() {
 	// n=1000 rng=[0, 1000]:
 	//
 	//            n: 1000
-	//    mem_total: 824
+	//    mem_total: 832
 	//     bits/elt: 6
 	//
 	// n=1000000 rng=[0, 1000000]:
 	//
 	//            n: 1000000
-	//    mem_total: 702624
+	//    mem_total: 702632
 	//     bits/elt: 5
 	//
 	// n=1000000 rng=[0, 1000000000]:
 	//
 	//            n: 1000000
-	//    mem_total: 2078304
+	//    mem_total: 2078312
 	//     bits/elt: 16
 }

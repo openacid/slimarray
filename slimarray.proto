@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "polyarray";
+option go_package = "slimarray";
 
-// PolyArray compresses a uint32 array with overall trend by describing the trend
+// SlimArray compresses a uint32 array with overall trend by describing the trend
 // with a polynomial, e.g., to store a sorted array is very common in practice.
 // Such as an block-list of IP addresses, or a series of var-length record
 // position on disk.
@@ -14,12 +14,12 @@ option go_package = "polyarray";
 // a `Get` access is also very fast: it takes only 10 nano second in our
 // benchmark.
 //
-// PolyArray is also ready for transport since it is defined with protobuf. E.g.:
-//    a := polyarray.NewPolyArray([]uint32{1, 2, 3})
+// SlimArray is also ready for transport since it is defined with protobuf. E.g.:
+//    a := slimarray.NewSlimArray([]uint32{1, 2, 3})
 //    bytes, err := proto.Marshal(a)
 //
 // Since 0.1.1
-message PolyArray {
+message SlimArray {
 
     // N is the count of elts
     int32  N                    = 10;

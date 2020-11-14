@@ -1,12 +1,12 @@
-package polyarray_test
+package slimarray_test
 
 import (
 	"fmt"
 
-	"github.com/openacid/polyarray"
+	"github.com/openacid/slimarray"
 )
 
-func ExamplePolyArray() {
+func ExampleSlimArray() {
 
 	nums := []uint32{
 		0, 16, 32, 48, 64, 79, 95, 111, 126, 142, 158, 174, 190, 206, 222, 236,
@@ -25,7 +25,7 @@ func ExamplePolyArray() {
 		956, 958, 962, 966, 968, 971, 975, 979, 983, 987, 989, 994, 997, 1000,
 	}
 
-	a := polyarray.NewPolyArray(nums)
+	a := slimarray.NewSlimArray(nums)
 
 	fmt.Println("last elt is:", a.Get(int32(a.Len()-1)))
 
@@ -41,5 +41,5 @@ func ExamplePolyArray() {
 	// last elt is: 1000
 	//  elt_width : 3
 	//   mem_elts : 112
-	//   bits/elt : 14
+	//   bits/elt : 15
 }

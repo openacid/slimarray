@@ -1,7 +1,7 @@
-`polyarray.md` is a markdown version of go doc of polyarry.
+`slimarray.md` is a markdown version of go doc of slimarray.
 see `make doc`
 
-`polyarray-package.md` is the package doc(without functions or types).
+`slimarray-package.md` is the package doc(without functions or types).
 And is included into `README.md`. see `make readme`.
 
 `README.md.j2` is a template which assemble resources together,

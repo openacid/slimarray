@@ -1,16 +1,16 @@
-# polyarray
+# slimarray
 
-[![Travis](https://travis-ci.com/openacid/polyarray.svg?branch=main)](https://travis-ci.com/openacid/polyarray)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/m0vvvrru7a1g4mae/branch/main?svg=true)](https://ci.appveyor.com/project/drmingdrmer/polyarray/branch/main)
-![test](https://github.com/openacid/polyarray/workflows/test/badge.svg)
+[![Travis](https://travis-ci.com/openacid/slimarray.svg?branch=main)](https://travis-ci.com/openacid/slimarray)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/m0vvvrru7a1g4mae/branch/main?svg=true)](https://ci.appveyor.com/project/drmingdrmer/slimarray/branch/main)
+![test](https://github.com/openacid/slimarray/workflows/test/badge.svg)
 
-[![Report card](https://goreportcard.com/badge/github.com/openacid/polyarray)](https://goreportcard.com/report/github.com/openacid/polyarray)
-[![Coverage Status](https://coveralls.io/repos/github/openacid/polyarray/badge.svg?branch=main&service=github)](https://coveralls.io/github/openacid/polyarray?branch=main&service=github)
+[![Report card](https://goreportcard.com/badge/github.com/openacid/slimarray)](https://goreportcard.com/report/github.com/openacid/slimarray)
+[![Coverage Status](https://coveralls.io/repos/github/openacid/slimarray/badge.svg?branch=main&service=github)](https://coveralls.io/github/openacid/slimarray?branch=main&service=github)
 
-[![GoDoc](https://godoc.org/github.com/openacid/polyarray?status.svg)](http://godoc.org/github.com/openacid/polyarray)
-[![Sourcegraph](https://sourcegraph.com/github.com/openacid/polyarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/polyarray?badge)
+[![GoDoc](https://godoc.org/github.com/openacid/slimarray?status.svg)](http://godoc.org/github.com/openacid/slimarray)
+[![Sourcegraph](https://sourcegraph.com/github.com/openacid/slimarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/slimarray?badge)
 
-PolyArray: space efficient `uint32` array.
+SlimArray: space efficient `uint32` array.
 It uses polynomial to compress and store an array.
 A `uint32` costs only **5 bits** in a sorted array of a million number in range `[0, 1000*1000]`(17% of original data).
 
@@ -22,7 +22,7 @@ A `uint32` costs only **5 bits** in a sorted array of a million number in range 
 - [What It Is And What It Is Not](#what-it-is-and-what-it-is-not)
 - [Install](#install)
 - [Synopsis](#synopsis)
-  - [Build a PolyArray](#build-a-polyarray)
+  - [Build a SlimArray](#build-a-slimarray)
 - [How it works](#how-it-works)
     - [The General Idea](#the-general-idea)
     - [What It Is And What It Is Not](#what-it-is-and-what-it-is-not-1)
@@ -62,7 +62,7 @@ n=1000000 rng=[0, 1000000000]:
 - **Fast access**: A `Get` takes 10 ns. Run and see the benchmark: `go test . -bench=.`.
 
 - **Adaptive**: It does not require the data to be totally sorted to compress
-    it. E.g., PolyArray is perfect to store online user histogram data.
+    it. E.g., SlimArray is perfect to store online user histogram data.
 
 
 # What It Is And What It Is Not
@@ -72,37 +72,37 @@ tree or radix tree). It is possible to use bitmap-based btree like structure
 to reduce space(very likely in such case it provides higher compression rate).
 But it requires the array to be **sorted**.
 
-PolyArray does not have such restriction. It is more adaptive with data
+SlimArray does not have such restriction. It is more adaptive with data
 layout. To achieve high compression rate, it only requires the data has a
 overall trend, e.g., **roughly sorted**.
 
 Additionally, it also accept duplicated element in the array, which
 a bitmap based or tree-like data structure does not allow.
 
-In the [ipv4-list](./example/iplist) example, we feed 450,000 ipv4 to PolyArray.
-We see that PolyArray costs as small as gzip-ed data(`2.1 MB vs 2.0 MB`),
+In the [ipv4-list](./example/iplist) example, we feed 450,000 ipv4 to SlimArray.
+We see that SlimArray costs as small as gzip-ed data(`2.1 MB vs 2.0 MB`),
 while it provides instance access to the data without decompressing it.
 
 # Install
 
 ```sh
-go get github.com/openacid/polyarray
+go get github.com/openacid/slimarray
 ```
 
 # Synopsis
 
-## Build a PolyArray
+## Build a SlimArray
 
 ```go
-package polyarray_test
+package slimarray_test
 
 import (
 	"fmt"
 
-	"github.com/openacid/polyarray"
+	"github.com/openacid/slimarray"
 )
 
-func ExamplePolyArray() {
+func ExampleSlimArray() {
 
 	nums := []uint32{
 		0, 16, 32, 48, 64, 79, 95, 111, 126, 142, 158, 174, 190, 206, 222, 236,
@@ -121,7 +121,7 @@ func ExamplePolyArray() {
 		956, 958, 962, 966, 968, 971, 975, 979, 983, 987, 989, 994, 997, 1000,
 	}
 
-	a := polyarray.NewPolyArray(nums)
+	a := slimarray.NewSlimArray(nums)
 
 	fmt.Println("last elt is:", a.Get(int32(a.Len()-1)))
 
@@ -137,13 +137,13 @@ func ExamplePolyArray() {
 	// last elt is: 1000
 	//  elt_width : 3
 	//   mem_elts : 112
-	//   bits/elt : 14
+	//   bits/elt : 15
 }
 ```
 
 # How it works
 
-package polyarray uses polynomial to compress and store an array of uint32. A
+package slimarray uses polynomial to compress and store an array of uint32. A
 uint32 costs only 5 bits in a sorted array of a million number in range [0,
 1000*1000].
 
@@ -174,7 +174,7 @@ tree or radix tree. It is possible to use bitmap-based btree like structure to
 reduce space(very likely in such case it provides higher compression rate). But
 it requires the array to be sorted.
 
-PolyArray does not have such restriction. It is more adaptive with data layout.
+SlimArray does not have such restriction. It is more adaptive with data layout.
 To achieve high compression rate, it only requires the data has a overall trend,
 e.g., roughly sorted, as seen in the above 4 integers examples. Additionally, it
 also accept duplicated element in the array, which a bitmap based or tree-like
@@ -183,7 +183,7 @@ data structure does not allow.
 
 ### Data Structure
 
-PolyArray splits the entire array into segments(Seg), each of which has 1024
+SlimArray splits the entire array into segments(Seg), each of which has 1024
 numbers. And then it splits every segment into several spans. Every span has its
 own polynomial. A span has 16*k numbers. A segment has at most 64 spans.
 
@@ -196,7 +196,7 @@ own polynomial. A span has 16*k numbers. A segment has at most 64 spans.
 
 ### Uncompacted Data Structures
 
-A PolyArray is a compacted data structure. The original data structures are
+A SlimArray is a compacted data structure. The original data structures are
 defined as follow(assumes original user data is `nums []uint32`):
 
     Seg strcut {
@@ -213,7 +213,7 @@ defined as follow(assumes original user data is `nums []uint32`):
         Offset        int32     // residual offset
         ResidualWidth int32     // number of bits a residual requires
       }
-      Residuals  [width][ResidualWidth]bit // pack into PolyArray.Residuals
+      Residuals  [width][ResidualWidth]bit // pack into SlimArray.Residuals
     }
 
 A span stores 16*k int32 in it, where k ∈ [1, 64).
@@ -231,7 +231,7 @@ In the above example:
     span[2] has 16*1 nums in it.
 
 `Seg.OnesCount` caches the total count of "1" in all preceding Seg.SpansBitmap.
-This accelerate locating a Span in the packed field PolyArray.Polynomials .
+This accelerate locating a Span in the packed field SlimArray.Polynomials .
 
 `Span.width` is the count of numbers stored in this span. It does not need to be
 stored because it can be calculated by counting the "0" between two "1" in
@@ -259,16 +259,16 @@ it is a `ResidualWidth`-bits integers.
 
 ### Compact
 
-PolyArray compact `Seg` into a dense format:
+SlimArray compact `Seg` into a dense format:
 
-    PolyArray.Bitmap = [
+    SlimArray.Bitmap = [
       Seg[0].SpansBitmap,
       Seg[0].OnesCount,
       Seg[1].SpansBitmap,
       Seg[1].OnesCount,
       ... ]
 
-    PolyArray.Polynomials = [
+    SlimArray.Polynomials = [
       Seg[0].Spans[0].Polynomials,
       Seg[0].Spans[1].Polynomials,
       ...
@@ -277,7 +277,7 @@ PolyArray compact `Seg` into a dense format:
       ...
     ]
 
-    PolyArray.Configs = [
+    SlimArray.Configs = [
       Seg[0].Spans[0].Config
       Seg[0].Spans[1].Config
       ...
@@ -286,4 +286,4 @@ PolyArray compact `Seg` into a dense format:
       ...
     ]
 
-`PolyArray.Residuals` simply packs the residuals of every nums[i] together.
+`SlimArray.Residuals` simply packs the residuals of every nums[i] together.

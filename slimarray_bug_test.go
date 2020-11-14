@@ -1,4 +1,4 @@
-package polyarray
+package slimarray
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var poly70KNums []uint32 = []uint32{0, 16, 32, 48, 64, 80, 96, 112, 128, 144,
+var bug70KNums []uint32 = []uint32{0, 16, 32, 48, 64, 80, 96, 112, 128, 144,
 	160, 176, 192, 208, 224, 240, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400,
 	416, 432, 448, 464, 480, 496, 512, 528, 544, 560, 576, 592, 608, 624, 640, 656,
 	672, 688, 704, 720, 736, 752, 768, 784, 800, 816, 832, 848, 864, 880, 896, 912,
@@ -200,15 +200,15 @@ var poly70KNums []uint32 = []uint32{0, 16, 32, 48, 64, 80, 96, 112, 128, 144,
 	35072, 35088, 35104, 35120, 35136, 35152, 35168, 35184, 35200, 35216, 35232,
 }
 
-func TestPolyArray_bug_start_overflow_2019_06_08(t *testing.T) {
+func TestSlimArray_bug_start_overflow_2019_06_08(t *testing.T) {
 
 	// typo of segment with. should be segment size.
 
 	ta := require.New(t)
 
-	nums := poly70KNums
+	nums := bug70KNums
 
-	a := NewPolyArray(nums)
+	a := NewSlimArray(nums)
 	for i, n := range nums {
 		r := a.Get(int32(i))
 		ta.Equal(n, r, "i=%d", i)

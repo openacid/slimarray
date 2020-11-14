@@ -3,7 +3,7 @@ package polyfit_test
 import (
 	"testing"
 
-	. "github.com/openacid/polyarray/polyfit"
+	. "github.com/openacid/slimarray/polyfit"
 	"github.com/stretchr/testify/assert"
 )
 

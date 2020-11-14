@@ -149,10 +149,15 @@ SlimArray compact `Seg` into a dense format:
 
 ## Usage
 
+```go
+var File_slimarray_proto protoreflect.FileDescriptor
+```
+
 #### type SlimArray
 
 ```go
 type SlimArray struct {
+
 	// N is the count of elts
 	N int32 `protobuf:"varint,10,opt,name=N,proto3" json:"N,omitempty"`
 	// Every 1024 elts segment has a 64-bit bitmap to describe the spans in it,
@@ -165,10 +170,7 @@ type SlimArray struct {
 	// store a residual in a span.
 	Configs []int64 `protobuf:"varint,22,rep,packed,name=Configs,proto3" json:"Configs,omitempty"`
 	// packed residuals for every elt.
-	Residuals            []uint64 `protobuf:"varint,23,rep,packed,name=Residuals,proto3" json:"Residuals,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Residuals []uint64 `protobuf:"varint,23,rep,packed,name=Residuals,proto3" json:"Residuals,omitempty"`
 }
 ```
 
@@ -204,6 +206,7 @@ Since 0.1.1
 ```go
 func (*SlimArray) Descriptor() ([]byte, []int)
 ```
+Deprecated: Use SlimArray.ProtoReflect.Descriptor instead.
 
 #### func (*SlimArray) Get
 
@@ -217,31 +220,31 @@ Since 0.1.1
 #### func (*SlimArray) GetBitmap
 
 ```go
-func (m *SlimArray) GetBitmap() []uint64
+func (x *SlimArray) GetBitmap() []uint64
 ```
 
 #### func (*SlimArray) GetConfigs
 
 ```go
-func (m *SlimArray) GetConfigs() []int64
+func (x *SlimArray) GetConfigs() []int64
 ```
 
 #### func (*SlimArray) GetN
 
 ```go
-func (m *SlimArray) GetN() int32
+func (x *SlimArray) GetN() int32
 ```
 
 #### func (*SlimArray) GetPolynomials
 
 ```go
-func (m *SlimArray) GetPolynomials() []float64
+func (x *SlimArray) GetPolynomials() []float64
 ```
 
 #### func (*SlimArray) GetResiduals
 
 ```go
-func (m *SlimArray) GetResiduals() []uint64
+func (x *SlimArray) GetResiduals() []uint64
 ```
 
 #### func (*SlimArray) Len
@@ -259,10 +262,16 @@ Since 0.1.1
 func (*SlimArray) ProtoMessage()
 ```
 
+#### func (*SlimArray) ProtoReflect
+
+```go
+func (x *SlimArray) ProtoReflect() protoreflect.Message
+```
+
 #### func (*SlimArray) Reset
 
 ```go
-func (m *SlimArray) Reset()
+func (x *SlimArray) Reset()
 ```
 
 #### func (*SlimArray) Stat
@@ -286,35 +295,5 @@ Since 0.1.1
 #### func (*SlimArray) String
 
 ```go
-func (m *SlimArray) String() string
-```
-
-#### func (*SlimArray) XXX_DiscardUnknown
-
-```go
-func (m *SlimArray) XXX_DiscardUnknown()
-```
-
-#### func (*SlimArray) XXX_Marshal
-
-```go
-func (m *SlimArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
-```
-
-#### func (*SlimArray) XXX_Merge
-
-```go
-func (dst *SlimArray) XXX_Merge(src proto.Message)
-```
-
-#### func (*SlimArray) XXX_Size
-
-```go
-func (m *SlimArray) XXX_Size() int
-```
-
-#### func (*SlimArray) XXX_Unmarshal
-
-```go
-func (m *SlimArray) XXX_Unmarshal(b []byte) error
+func (x *SlimArray) String() string
 ```
