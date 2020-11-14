@@ -94,5 +94,5 @@ coveralls:
 	$(GO) get golang.org/x/tools/cmd/cover
 	$(GO) get github.com/mattn/goveralls
 	$(GO) test -covermode=count -coverprofile=coverage.out $(PKGS)
-	goveralls -ignore='polyarray.pb.go' -coverprofile=coverage.out -service=travis-ci
+	goveralls -ignore='*.pb.go' -coverprofile=coverage.out -service=travis-ci
 	# goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $$COVERALLS_TOKEN
