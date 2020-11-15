@@ -62,31 +62,31 @@ type SlimArray struct {
 	Residuals []uint64 `protobuf:"varint,23,rep,packed,name=Residuals,proto3" json:"Residuals,omitempty"`
 }
 
-func (x *SlimArray) Reset() {
-	*x = SlimArray{}
+func (sm *SlimArray) Reset() {
+	*sm = SlimArray{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_slimarray_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(sm))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SlimArray) String() string {
-	return protoimpl.X.MessageStringOf(x)
+func (sm *SlimArray) String() string {
+	return protoimpl.X.MessageStringOf(sm)
 }
 
 func (*SlimArray) ProtoMessage() {}
 
-func (x *SlimArray) ProtoReflect() protoreflect.Message {
+func (sm *SlimArray) ProtoReflect() protoreflect.Message {
 	mi := &file_slimarray_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	if protoimpl.UnsafeEnabled && sm != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(sm))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
 		}
 		return ms
 	}
-	return mi.MessageOf(x)
+	return mi.MessageOf(sm)
 }
 
 // Deprecated: Use SlimArray.ProtoReflect.Descriptor instead.
@@ -94,37 +94,37 @@ func (*SlimArray) Descriptor() ([]byte, []int) {
 	return file_slimarray_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SlimArray) GetN() int32 {
-	if x != nil {
-		return x.N
+func (sm *SlimArray) GetN() int32 {
+	if sm != nil {
+		return sm.N
 	}
 	return 0
 }
 
-func (x *SlimArray) GetBitmap() []uint64 {
-	if x != nil {
-		return x.Bitmap
+func (sm *SlimArray) GetBitmap() []uint64 {
+	if sm != nil {
+		return sm.Bitmap
 	}
 	return nil
 }
 
-func (x *SlimArray) GetPolynomials() []float64 {
-	if x != nil {
-		return x.Polynomials
+func (sm *SlimArray) GetPolynomials() []float64 {
+	if sm != nil {
+		return sm.Polynomials
 	}
 	return nil
 }
 
-func (x *SlimArray) GetConfigs() []int64 {
-	if x != nil {
-		return x.Configs
+func (sm *SlimArray) GetConfigs() []int64 {
+	if sm != nil {
+		return sm.Configs
 	}
 	return nil
 }
 
-func (x *SlimArray) GetResiduals() []uint64 {
-	if x != nil {
-		return x.Residuals
+func (sm *SlimArray) GetResiduals() []uint64 {
+	if sm != nil {
+		return sm.Residuals
 	}
 	return nil
 }

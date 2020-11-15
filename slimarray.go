@@ -50,13 +50,13 @@
 //    16 nums    32 nums      ..
 //
 //
-// Uncompacted Data Structures
+// Uncompressed Data Structures
 //
 // A SlimArray is a compacted data structure.
 // The original data structures are defined as follow(assumes original user data
 // is `nums []uint32`):
 //
-//   Seg strcut {
+//   Seg struct {
 //     SpansBitmap   uint64      // describe span layout
 //     OnesCount     uint64      // count `1` in preceding Seg.
 //     Spans       []Span
@@ -66,7 +66,7 @@
 //     width         int32       // is retrieved from SpansBitmap
 //
 //     Polynomial [3]double      //
-//     Config strcut {           //
+//     Config struct {           //
 //       Offset        int32     // residual offset
 //       ResidualWidth int32     // number of bits a residual requires
 //     }
@@ -105,7 +105,7 @@
 // But if the preceding span has smaller residual width, the "offset" could be
 // negative, e.g.: span[0] has residual of width 0 and 16 residuals,
 // span[1] has residual of width 4.
-// Then the "offset" of span[1] is `-16*4` in order to satisify:
+// Then the "offset" of span[1] is `-16*4` in order to satisfy:
 // `(-16*4) + i * 4` is the correct residual position, for i in [16, 32).
 //
 // `Span.Config.ResidualWidth` specifies the number of bits to
@@ -177,10 +177,10 @@ const (
 	polyCoefCnt = polyDegree + 1
 )
 
-// evalpoly2 evaluates a polynomial with degree=2.
+// evalPoly2 evaluates a polynomial with degree=2.
 //
 // Since 0.1.1
-func evalpoly2(poly []float64, x float64) float64 {
+func evalPoly2(poly []float64, x float64) float64 {
 	return poly[0] + poly[1]*x + poly[2]*x*x
 }
 
@@ -212,11 +212,11 @@ func NewU32(nums []uint32) *SlimArray {
 // A Get() costs about 10 ns
 //
 // Since 0.1.1
-func (m *SlimArray) Get(i int32) uint32 {
+func (sm *SlimArray) Get(i int32) uint32 {
 
 	// The index of a segment
 	bitmapI := (i >> segSizeShift) << 1
-	spansBitmap, rank := m.Bitmap[bitmapI], m.Bitmap[bitmapI|1]
+	spansBitmap, rank := sm.Bitmap[bitmapI], sm.Bitmap[bitmapI|1]
 
 	i = i & segSizeMask
 	x := float64(i)
@@ -228,10 +228,10 @@ func (m *SlimArray) Get(i int32) uint32 {
 	// eval y = a + bx + cx²
 
 	j := spanIdx * polyCoefCnt
-	p := m.Polynomials
+	p := sm.Polynomials
 	v := int64(p[j] + p[j+1]*x + p[j+2]*x*x)
 
-	config := m.Configs[spanIdx]
+	config := sm.Configs[spanIdx]
 	residualWidth := config & 0xff
 	offset := config >> 8
 
@@ -239,7 +239,7 @@ func (m *SlimArray) Get(i int32) uint32 {
 	resBitIdx := offset + int64(i)*residualWidth
 
 	// extract residual from packed []uint64
-	d := m.Residuals[resBitIdx>>6]
+	d := sm.Residuals[resBitIdx>>6]
 	d = d >> uint(resBitIdx&63)
 
 	return uint32(v + int64(d&bitmap.Mask[residualWidth]))
@@ -248,8 +248,8 @@ func (m *SlimArray) Get(i int32) uint32 {
 // Len returns number of elements.
 //
 // Since 0.1.1
-func (m *SlimArray) Len() int {
-	return int(m.N)
+func (sm *SlimArray) Len() int {
+	return int(sm.N)
 }
 
 // Stat returns a map describing memory usage.
@@ -264,19 +264,19 @@ func (m *SlimArray) Len() int {
 //    n         :10          // total elt count
 //
 // Since 0.1.1
-func (m *SlimArray) Stat() map[string]int32 {
-	nseg := len(m.Bitmap) / 2
-	totalmem := size.Of(m)
+func (sm *SlimArray) Stat() map[string]int32 {
+	segCnt := len(sm.Bitmap) / 2
+	totalmem := size.Of(sm)
 
-	spanCnt := len(m.Polynomials) / 3
-	memWords := len(m.Residuals) * 8
+	spanCnt := len(sm.Polynomials) / 3
+	memWords := len(sm.Residuals) * 8
 	widthAvg := 0
 	for i := 0; i < spanCnt; i++ {
-		w := m.Configs[i] & 0xff
+		w := sm.Configs[i] & 0xff
 		widthAvg += int(w)
 	}
 
-	n := m.Len()
+	n := sm.Len()
 	if n == 0 {
 		n = 1
 	}
@@ -286,35 +286,35 @@ func (m *SlimArray) Stat() map[string]int32 {
 	}
 
 	st := map[string]int32{
-		"seg_cnt":   int32(nseg),
+		"seg_cnt":   int32(segCnt),
 		"elt_width": int32(widthAvg / spanCnt),
 		"mem_total": int32(totalmem),
 		"mem_elts":  int32(memWords),
 		"bits/elt":  int32(totalmem * 8 / n),
-		"spans/seg": int32((spanCnt * 1000) / (nseg*1000 + 1)),
+		"spans/seg": int32((spanCnt * 1000) / (segCnt*1000 + 1)),
 		"span_cnt":  int32(spanCnt),
-		"n":         m.N,
+		"n":         sm.N,
 	}
 
 	return st
 }
 
-func (m *SlimArray) addSeg(nums []uint32) {
+func (sm *SlimArray) addSeg(nums []uint32) {
 
-	bm, polys, configs, words := newSeg(nums, int64(len(m.Residuals)*64))
+	bm, polynomials, configs, words := newSeg(nums, int64(len(sm.Residuals)*64))
 
 	var r uint64
-	if len(m.Bitmap) > 0 {
-		l := len(m.Bitmap)
-		r = m.Bitmap[l-1] + uint64(bits.OnesCount64(m.Bitmap[l-2]))
+	if len(sm.Bitmap) > 0 {
+		l := len(sm.Bitmap)
+		r = sm.Bitmap[l-1] + uint64(bits.OnesCount64(sm.Bitmap[l-2]))
 	} else {
 		r = 0
 	}
 
-	m.Bitmap = append(m.Bitmap, bm, r)
-	m.Polynomials = append(m.Polynomials, polys...)
-	m.Configs = append(m.Configs, configs...)
-	m.Residuals = append(m.Residuals, words...)
+	sm.Bitmap = append(sm.Bitmap, bm, r)
+	sm.Polynomials = append(sm.Polynomials, polynomials...)
+	sm.Configs = append(sm.Configs, configs...)
+	sm.Residuals = append(sm.Residuals, words...)
 }
 
 func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
@@ -333,7 +333,7 @@ func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 
 	spans := findMinFittingsNew(xs, ys, fts)
 
-	polys := make([]float64, 0)
+	polynomials := make([]float64, 0)
 	configs := make([]int64, 0)
 	words := make([]uint64, n) // max size
 
@@ -345,26 +345,26 @@ func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 	for _, sp := range spans {
 
 		// every poly starts at 16*k th point
-		segPolyBitmap |= (1 << uint((sp.e-1)>>4))
+		segPolyBitmap |= 1 << uint((sp.e-1)>>4)
 
 		width := sp.residualWidth
 		if width > 0 {
-			resI = (resI + int64(width) - 1)
+			resI = resI + int64(width) - 1
 			resI -= resI % int64(width)
 		}
 
-		polys = append(polys, sp.poly...)
+		polynomials = append(polynomials, sp.poly...)
 
 		// We want eltIndex = stBySeg + i * residualWidth
 		// min of stBySeg is -segmentSize * residualWidth = -1024 * 16;
 		// Add this value to make it a positive number.
 		offset := resI + start - int64(sp.s)*int64(width)
-		confi64 := offset<<8 | int64(width)
-		configs = append(configs, confi64)
+		config := offset<<8 | int64(width)
+		configs = append(configs, config)
 
 		for j := sp.s; j < sp.e; j++ {
 
-			v := evalpoly2(sp.poly, xs[j])
+			v := evalPoly2(sp.poly, xs[j])
 
 			// It may overflow but the result is correct because (a+b) % p =
 			// (a%p + b%p) % p
@@ -379,17 +379,17 @@ func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 
 	nWords := (resI + 63) >> 6
 
-	return segPolyBitmap, polys, configs, words[:nWords]
+	return segPolyBitmap, polynomials, configs, words[:nWords]
 }
 
-func initFittings(xs, ys []float64, polysize int32) []*polyfit.Fitting {
+func initFittings(xs, ys []float64, spanSize int32) []*polyfit.Fitting {
 
 	fts := make([]*polyfit.Fitting, 0)
 	n := int32(len(xs))
 
-	for i := int32(0); i < n; i += polysize {
+	for i := int32(0); i < n; i += spanSize {
 		s := i
-		e := s + polysize
+		e := s + spanSize
 		if e > n {
 			e = n
 		}
@@ -410,17 +410,17 @@ type span struct {
 	s, e int32
 }
 
-func (sp span) String() string {
+func (sp *span) String() string {
 	return fmt.Sprintf("%d-%d(%d): width: %d, mem: %d, poly: %v",
 		sp.s, sp.e, sp.e-sp.s, sp.residualWidth, sp.mem, sp.poly)
 }
 
 // findMinFittingsNew by merge adjacent 16-numbers span.
 // If two spans has a common trend they should be described with one polynomial.
-func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []span {
+func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 
-	spans := make([]span, len(fts))
-	merged := make([]span, len(fts)-1)
+	spans := make([]*span, len(fts))
+	merged := make([]*span, len(fts)-1)
 
 	var s, e int32
 	s = 0
@@ -478,13 +478,13 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []span {
 	return spans
 }
 
-func mergeTwoSpan(xs, ys []float64, a, b span) span {
+func mergeTwoSpan(xs, ys []float64, a, b *span) *span {
 	ft := mergeTwoFitting(a.ft, b.ft)
 	sp := newSpan(xs, ys, ft, a.s, b.e)
 	return sp
 }
 
-func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) span {
+func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) *span {
 
 	poly := ft.Solve()
 	max, min := maxMinResiduals(poly, xs[s:e], ys[s:e])
@@ -497,7 +497,7 @@ func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) span {
 	}
 	mem := memCost(poly, residualWidth, int32(ft.N))
 
-	return span{
+	return &span{
 		ft:            ft,
 		poly:          poly,
 		residualWidth: residualWidth,
@@ -547,7 +547,7 @@ func maxMinResiduals(poly, xs, ys []float64) (float64, float64) {
 	max, min := float64(0), float64(0)
 
 	for i, x := range xs {
-		v := evalpoly2(poly, x)
+		v := evalPoly2(poly, x)
 		diff := ys[i] - v
 		if diff > max {
 			max = diff
