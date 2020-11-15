@@ -95,6 +95,21 @@ func TestFitting_Merge(t *testing.T) {
 	ta.Panics(func() { f.Merge(NewFitting(xs[:2], ys[:2], 4)) })
 }
 
+func TestFitting_Copy(t *testing.T) {
+
+	ta := assert.New(t)
+
+	xs := []float64{1, 2, 3, 4}
+	ys := []float64{1, 2, 3, 4}
+
+	fa := NewFitting(xs, ys, 3)
+	fb := fa.Copy()
+
+	ta.Equal(fa.String(), fb.String())
+	ta.Equal(fa, fb)
+
+}
+
 func TestFitting_Solve(t *testing.T) {
 
 	ta := assert.New(t)
@@ -106,6 +121,7 @@ func TestFitting_Solve(t *testing.T) {
 		degree int
 		want   []float64
 	}{
+		{0, []float64{7}},
 		{1, []float64{3.5, 1.4}},
 		{2, []float64{8.5, -3.6, 1}},
 		{3, []float64{12, -9.1666666, 3.5, -0.33333}},

@@ -63,7 +63,7 @@ n=1000000 rng=[0, 1000000000]:
     bits/elt: 16
 ```
 
-- **Fast**: `Get()`: 7 ns/op. Creation: 150 ns/elt. Run and see the benchmark: `go test . -bench=.`.
+- **Fast**: `Get()`: 7 ns/op. Building: 150 ns/elt. Run and see the benchmark: `go test . -bench=.`.
 
 - **Adaptive**: It does not require the data to be totally sorted to compress
     it. E.g., SlimArray is perfect to store online user histogram data.
