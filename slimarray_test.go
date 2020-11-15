@@ -3,6 +3,7 @@ package slimarray
 import (
 	"fmt"
 	"math/rand"
+	sync "sync"
 	"testing"
 	"time"
 
@@ -337,5 +338,38 @@ func BenchmarkNewU32(b *testing.B) {
 	}
 
 	// fmt.Println(a.Stat())
+	Output = int(s)
+}
+
+func BenchmarkNewU32_multi(b *testing.B) {
+
+	n := int32(1024 * 10)
+	step := int32(128)
+	ns := testutil.RandU32Slice(0, n, step)
+
+	s := uint32(0)
+
+	nthread := 8
+
+	var wg sync.WaitGroup
+
+	b.ResetTimer()
+
+	for i := 0; i < nthread; i++ {
+		wg.Add(1)
+		go func() {
+			var a *SlimArray
+			for i := 0; i < b.N/nthread/int(n)+1; i++ {
+				a = NewU32(ns)
+				s += a.Get(int32(0))
+			}
+
+			wg.Done()
+		}()
+
+	}
+
+	wg.Wait()
+
 	Output = int(s)
 }

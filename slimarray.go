@@ -409,6 +409,7 @@ func initFittings(xs, ys []float64, spanSize int32) []*polyfit.Fitting {
 
 type span struct {
 	ft            *polyfit.Fitting
+	origPoly      []float64
 	poly          []float64
 	residualWidth uint32
 	mem           int
@@ -419,13 +420,15 @@ type span struct {
 
 func (sp *span) Copy() *span {
 	b := &span{
-		ft:   sp.ft.Copy(),
-		poly: make([]float64, 0, len(sp.poly)),
-		mem:  sp.mem,
-		s:    sp.s,
-		e:    sp.e,
+		ft:       sp.ft.Copy(),
+		origPoly: make([]float64, 0, len(sp.origPoly)),
+		poly:     make([]float64, 0, len(sp.poly)),
+		mem:      sp.mem,
+		s:        sp.s,
+		e:        sp.e,
 	}
 
+	b.origPoly = append(b.origPoly, sp.origPoly...)
 	b.poly = append(b.poly, sp.poly...)
 	return b
 }
@@ -529,11 +532,20 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 	return spans
 }
 
-func mergeTwoSpan(xs, ys []float64, a, b *span) *span {
+func mergeTwoSpan(xs, ys []float64, a, b *span) {
 	a.ft.Merge(b.ft)
 	a.e = b.e
-	a.init(xs, ys)
-	return a
+
+	// policy: re-fit curve
+	a.solve()
+	a.updatePolyAndStat(xs, ys)
+
+	// // policy: mean curve
+	// // twice faster than re-fit, also results in twice memory cost.
+	// for i, c := range b.origPoly {
+	//     a.origPoly[i] = (a.origPoly[i] + c) / 2
+	// }
+	// a.updatePolyAndStat(xs, ys)
 }
 
 func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) *span {
@@ -543,27 +555,32 @@ func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) *span {
 		s:  s,
 		e:  e,
 	}
-	sp.init(xs, ys)
+	sp.solve()
+	sp.updatePolyAndStat(xs, ys)
 
 	return sp
 }
 
-func (sp *span) init(xs, ys []float64) {
-	poly := sp.ft.Solve()
+func (sp *span) solve() {
+	sp.origPoly = sp.ft.Solve()
+}
+
+func (sp *span) updatePolyAndStat(xs, ys []float64) {
 	s, e := sp.s, sp.e
-	max, min := maxMinResiduals(poly, xs[s:e], ys[s:e])
+	max, min := maxMinResiduals(sp.origPoly, xs[s:e], ys[s:e])
 	margin := int64(math.Ceil(max - min))
-	poly[0] += min
+
+	sp.poly = append([]float64{}, sp.origPoly...)
+	sp.poly[0] += min
 
 	residualWidth := marginWidth(margin)
 	if residualWidth > 32 {
 		residualWidth = 32
 	}
-	mem := memCost(poly, residualWidth, int32(sp.ft.N))
-
-	sp.poly = poly
 	sp.residualWidth = residualWidth
-	sp.mem = mem
+
+	sp.mem = memCost(sp.poly, residualWidth, int32(sp.ft.N))
+
 }
 
 // marginWidth calculate the minimal number of bits to store `margin`.
