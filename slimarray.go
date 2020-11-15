@@ -184,6 +184,8 @@ func evalPoly2(poly []float64, x float64) float64 {
 
 // NewU32 creates a "SlimArray" array from a slice of uint32.
 //
+// A NewU32() costs about 500 ns/elt.
+//
 // Since 0.1.1
 func NewU32(nums []uint32) *SlimArray {
 
@@ -415,6 +417,19 @@ type span struct {
 	s, e int32
 }
 
+func (sp *span) Copy() *span {
+	b := &span{
+		ft:   sp.ft.Copy(),
+		poly: make([]float64, 0, len(sp.poly)),
+		mem:  sp.mem,
+		s:    sp.s,
+		e:    sp.e,
+	}
+
+	b.poly = append(b.poly, sp.poly...)
+	return b
+}
+
 func (sp *span) String() string {
 	return fmt.Sprintf("%d-%d(%d): width: %d, mem: %d, poly: %v",
 		sp.s, sp.e, sp.e-sp.s, sp.residualWidth, sp.mem, sp.poly)
@@ -440,7 +455,9 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 
 	for i, sp := range spans[:len(spans)-1] {
 		sp2 := spans[i+1]
-		merged[i] = mergeTwoSpan(xs, ys, sp, sp2)
+
+		merged[i] = sp.Copy()
+		mergeTwoSpan(xs, ys, merged[i], sp2)
 	}
 
 	for len(merged) > 0 {
@@ -461,19 +478,48 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 			}
 		}
 
+		// maxI -> b
+		//
+		// span:     a  b  c  d
+		// merged:    ab bc cd
+		//
+		// becomes:
+		//
+		// span:     a   bc   d
+		// merged:    abc  bcd
+		//
+		// a => a
+		// b => nil
+		// c => nil
+		// d => d
+		// ab + c => abc
+		// bc => bc
+		// b + cd => bcd
+
 		if maxReduced > 0 {
 
-			spans[maxI] = mergeTwoSpan(xs, ys, spans[maxI], spans[maxI+1])
-			spans = append(spans[:maxI+1], spans[maxI+2:]...)
+			// a  b  c  d
+			// abc bc cd
 			if maxI > 0 {
-				merged[maxI-1] = mergeTwoSpan(xs, ys, spans[maxI-1], spans[maxI])
+				mergeTwoSpan(xs, ys, merged[maxI-1], spans[maxI+1])
 			}
 
+			// a  bcd  c  d
+			// abc bc bcd
+			if maxI < len(merged)-1 {
+				mergeTwoSpan(xs, ys, spans[maxI], merged[maxI+1])
+				merged[maxI+1] = spans[maxI]
+			}
+
+			// a  bc  d
+			// abc bc bcd
+			spans[maxI] = merged[maxI]
+			spans = append(spans[:maxI+1], spans[maxI+2:]...)
+
+			// a  bc  d
+			// abc  bcd
 			merged = append(merged[:maxI], merged[maxI+1:]...)
 
-			if maxI < len(spans)-1 {
-				merged[maxI] = mergeTwoSpan(xs, ys, spans[maxI], spans[maxI+1])
-			}
 		} else {
 			// Even the minimal merge does not reduce memory cost.
 			break
@@ -484,14 +530,27 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 }
 
 func mergeTwoSpan(xs, ys []float64, a, b *span) *span {
-	ft := mergeTwoFitting(a.ft, b.ft)
-	sp := newSpan(xs, ys, ft, a.s, b.e)
-	return sp
+	a.ft.Merge(b.ft)
+	a.e = b.e
+	a.init(xs, ys)
+	return a
 }
 
 func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) *span {
 
-	poly := ft.Solve()
+	sp := &span{
+		ft: ft,
+		s:  s,
+		e:  e,
+	}
+	sp.init(xs, ys)
+
+	return sp
+}
+
+func (sp *span) init(xs, ys []float64) {
+	poly := sp.ft.Solve()
+	s, e := sp.s, sp.e
 	max, min := maxMinResiduals(poly, xs[s:e], ys[s:e])
 	margin := int64(math.Ceil(max - min))
 	poly[0] += min
@@ -500,25 +559,11 @@ func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) *span {
 	if residualWidth > 32 {
 		residualWidth = 32
 	}
-	mem := memCost(poly, residualWidth, int32(ft.N))
+	mem := memCost(poly, residualWidth, int32(sp.ft.N))
 
-	return &span{
-		ft:            ft,
-		poly:          poly,
-		residualWidth: residualWidth,
-		mem:           mem,
-		s:             s,
-		e:             e,
-	}
-}
-
-func mergeTwoFitting(a, b *polyfit.Fitting) *polyfit.Fitting {
-
-	f := polyfit.NewFitting(nil, nil, a.Degree)
-	f.Merge(a)
-	f.Merge(b)
-
-	return f
+	sp.poly = poly
+	sp.residualWidth = residualWidth
+	sp.mem = mem
 }
 
 // marginWidth calculate the minimal number of bits to store `margin`.

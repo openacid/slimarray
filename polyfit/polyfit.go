@@ -95,6 +95,24 @@ func NewFitting(xs, ys []float64, degree int) *Fitting {
 	return f
 }
 
+// Copy into a new instance.
+//
+// Since 0.1.3
+func (f *Fitting) Copy() *Fitting {
+	b := &Fitting{
+		N:      f.N,
+		Degree: f.Degree,
+
+		xtx: make([]float64, 0, len(f.xtx)),
+		xty: make([]float64, 0, len(f.xty)),
+	}
+
+	b.xtx = append(b.xtx, f.xtx...)
+	b.xty = append(b.xty, f.xty...)
+
+	return b
+}
+
 // Add a point(x, y) into this fitting.
 //
 // Since 0.1.0

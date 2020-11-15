@@ -310,7 +310,7 @@ func BenchmarkSlimArray_Get(b *testing.B) {
 	s := uint32(0)
 
 	a := NewU32(ns)
-	fmt.Println(a.Stat())
+	// fmt.Println(a.Stat())
 
 	b.ResetTimer()
 
@@ -323,7 +323,7 @@ func BenchmarkSlimArray_Get(b *testing.B) {
 
 func BenchmarkNewU32(b *testing.B) {
 
-	n := int32(1024 * 1024)
+	n := int32(1024 * 10)
 	step := int32(128)
 	ns := testutil.RandU32Slice(0, n, step)
 
@@ -331,12 +331,11 @@ func BenchmarkNewU32(b *testing.B) {
 
 	b.ResetTimer()
 	var a *SlimArray
-	for i := 0; i < b.N; i++ {
+	for i := 0; i < b.N/int(n)+1; i++ {
 		a = NewU32(ns)
 		s += a.Get(int32(0))
 	}
 
-	fmt.Println(a.Stat())
-
+	// fmt.Println(a.Stat())
 	Output = int(s)
 }
