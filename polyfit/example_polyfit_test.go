@@ -10,7 +10,7 @@ func Example() {
 
 	// Fit 4 points with a polynomial of degree=2,
 	// the result should be:
-	// y = 6.2 - 0.7x + 0.2x²
+	// y = 6.2 - 0.8x + 0.2x²
 	//                                    .
 	//                                  ..
 	//                                 .
@@ -39,10 +39,10 @@ func Example() {
 	}
 
 	// Output:
-	// y = 6.2 + -0.7x + 0.2x²
-	// point[0]=(1, 6), evaluated=(1, 5.7)
+	// y = 6.2 + -0.8x + 0.2x²
+	// point[0]=(1, 6), evaluated=(1, 5.8)
 	// point[1]=(2, 5), evaluated=(2, 5.8)
-	// point[2]=(3, 7), evaluated=(3, 6.3)
+	// point[2]=(3, 7), evaluated=(3, 6.2)
 	// point[3]=(4, 7), evaluated=(4, 7.2)
 
 }

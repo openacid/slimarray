@@ -60,7 +60,7 @@ func ExampleSlimArray_Stat() {
 	// n=1000000 rng=[0, 1000000]:
 	//
 	//            n: 1000000
-	//    mem_total: 702656
+	//    mem_total: 705720
 	//     bits/elt: 5
 	//
 	// n=1000000 rng=[0, 1000000000]:

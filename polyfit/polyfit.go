@@ -177,6 +177,21 @@ func (f *Fitting) Solve() []float64 {
 
 	m := f.Degree + 1
 
+	if m <= f.N {
+		// quick path
+		rst := make([]float64, m)
+		if m == 1 {
+			solve1(f.xtx, f.xty, rst)
+			return rst
+		} else if m == 2 {
+			solve2(f.xtx, f.xty, rst)
+			return rst
+		} else if m == 3 {
+			solve3(f.xtx, f.xty, rst)
+			return rst
+		}
+	}
+
 	coef := mat.NewDense(m, m, f.xtx)
 	right := mat.NewDense(m, 1, f.xty)
 
@@ -208,6 +223,49 @@ func (f *Fitting) Solve() []float64 {
 		rst[i] = 0
 	}
 	return rst
+}
+
+func determinant2(v []float64) float64 {
+	a, b, c, d := v[0], v[1], v[2], v[3]
+	return a*d - b*c
+}
+
+func determinant3(v []float64) float64 {
+	a, b, c, d, e, f, g, h, i := v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]
+	return a*e*i + b*f*g + c*d*h - c*e*g - b*d*i - a*f*h
+}
+
+func solve1(v []float64, y []float64, into []float64) {
+	into[0] = y[0] / v[0]
+}
+
+func solve2(v []float64, y []float64, into []float64) {
+
+	a, b, c, d := v[0], v[1], v[2], v[3]
+
+	dd := determinant2(v)
+	dx1 := y[0]*d - b*y[1]
+	dx2 := a*y[1] - y[0]*c
+
+	into[0] = dx1 / dd
+	into[1] = dx2 / dd
+}
+
+func solve3(v []float64, y []float64, into []float64) {
+
+	a, b, c, d, e, f, g, h, i := v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]
+
+	dd := determinant3(v)
+	// a d g
+	dx1 := y[0]*e*i + b*f*y[2] + c*y[1]*h - c*e*y[2] - b*y[1]*i - y[0]*f*h
+	// b e h
+	dx2 := a*y[1]*i + y[0]*f*g + c*d*y[2] - c*y[1]*g - y[0]*d*i - a*f*y[2]
+	// c f i
+	dx3 := a*e*y[2] + b*y[1]*g + y[0]*d*h - y[0]*e*g - b*d*y[2] - a*y[1]*h
+
+	into[0] = dx1 / dd
+	into[1] = dx2 / dd
+	into[2] = dx3 / dd
 }
 
 // String converts the object into human readable format.

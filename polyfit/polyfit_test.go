@@ -139,6 +139,56 @@ func TestFitting_Solve(t *testing.T) {
 	}
 }
 
+var Output int
+
+func BenchmarkFitting_Solve1(b *testing.B) {
+
+	xs := []float64{1, 2, 3, 4}
+	ys := []float64{6, 5, 7, 10}
+
+	f := NewFitting(xs, ys, 1)
+	s := 0
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		poly := f.Solve()
+		s += int(poly[0])
+	}
+
+	Output = s
+}
+
+func BenchmarkFitting_Solve2(b *testing.B) {
+
+	xs := []float64{1, 2, 3, 4}
+	ys := []float64{6, 5, 7, 10}
+
+	f := NewFitting(xs, ys, 2)
+	s := 0
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		poly := f.Solve()
+		s += int(poly[0])
+	}
+
+	Output = s
+}
+
+func BenchmarkFitting_Solve3(b *testing.B) {
+
+	xs := []float64{1, 2, 3, 4}
+	ys := []float64{6, 5, 7, 10}
+
+	f := NewFitting(xs, ys, 3)
+	s := 0
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		poly := f.Solve()
+		s += int(poly[0])
+	}
+
+	Output = s
+}
+
 func eval(poly []float64, x float64) float64 {
 	rst := float64(0)
 	pow := float64(1)

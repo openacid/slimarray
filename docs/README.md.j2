@@ -13,8 +13,9 @@
 SlimArray is a space efficient, static `uint32` array.
 It uses polynomial to compress and store an array.
 With a SlimArray with a million sorted number in range `[0, 1000*1000]`,
-- a `uint32` requires only **5 bits** (17% of original data),
-- and a `Get` operation takes **7 ns**.
+- a `uint32` requires only **5 bits** (17% of original data);
+- compressing a `uint32` takes **150 ns**, e.g., 6 million insert per second;
+- reading a `uint32` with `Get()` takes **7 ns**.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -30,7 +31,7 @@ With a SlimArray with a million sorted number in range `[0, 1000*1000]`,
 
 {% include 'docs/report-stat.md' %}
 
-- **Fast access**: A `Get` takes 7 ns. Run and see the benchmark: `go test . -bench=.`.
+- **Fast**: `Get()`: 7 ns/op. Creation: 150 ns/elt. Run and see the benchmark: `go test . -bench=.`.
 
 - **Adaptive**: It does not require the data to be totally sorted to compress
     it. E.g., SlimArray is perfect to store online user histogram data.
