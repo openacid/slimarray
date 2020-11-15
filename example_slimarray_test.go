@@ -41,5 +41,5 @@ func ExampleSlimArray() {
 	// last elt is: 1000
 	//  elt_width : 3
 	//   mem_elts : 112
-	//   bits/elt : 15
+	//   bits/elt : 16
 }

@@ -53,14 +53,14 @@ own polynomial. A span has 16*k numbers. A segment has at most 64 spans.
      16 nums    32 nums      ..
 
 
-### Uncompacted Data Structures
+### Uncompressed Data Structures
 
 A SlimArray is a compacted data structure. The original data structures are
 defined as follow(assumes original user data is `nums []uint32`):
 
-    Seg strcut {
+    Seg struct {
       SpansBitmap   uint64      // describe span layout
-      OnesCount     uint64      // count `1` in preceding Seg.
+      Rank         uint64      // count `1` in preceding Seg.
       Spans       []Span
     }
 
@@ -68,7 +68,7 @@ defined as follow(assumes original user data is `nums []uint32`):
       width         int32       // is retrieved from SpansBitmap
 
       Polynomial [3]double      //
-      Config strcut {           //
+      Config struct {           //
         Offset        int32     // residual offset
         ResidualWidth int32     // number of bits a residual requires
       }
@@ -89,8 +89,8 @@ In the above example:
     span[1] has 16*2 nums in it.
     span[2] has 16*1 nums in it.
 
-`Seg.OnesCount` caches the total count of "1" in all preceding Seg.SpansBitmap.
-This accelerate locating a Span in the packed field SlimArray.Polynomials .
+`Seg.Rank` caches the total count of "1" in all preceding Seg.SpansBitmap. This
+accelerate locating a Span in the packed field SlimArray.Polynomials .
 
 `Span.width` is the count of numbers stored in this span. It does not need to be
 stored because it can be calculated by counting the "0" between two "1" in
@@ -107,7 +107,7 @@ to have that:
 But if the preceding span has smaller residual width, the "offset" could be
 negative, e.g.: span[0] has residual of width 0 and 16 residuals, span[1] has
 residual of width 4. Then the "offset" of span[1] is `-16*4` in order to
-satisify: `(-16*4) + i * 4` is the correct residual position, for i in [16, 32).
+satisfy: `(-16*4) + i * 4` is the correct residual position, for i in [16, 32).
 
 `Span.Config.ResidualWidth` specifies the number of bits to store every residual
 in this span, it must be a power of 2: `2^k`.
@@ -122,9 +122,7 @@ SlimArray compact `Seg` into a dense format:
 
     SlimArray.Bitmap = [
       Seg[0].SpansBitmap,
-      Seg[0].OnesCount,
       Seg[1].SpansBitmap,
-      Seg[1].OnesCount,
       ... ]
 
     SlimArray.Polynomials = [
@@ -159,7 +157,8 @@ var File_slimarray_proto protoreflect.FileDescriptor
 type SlimArray struct {
 
 	// N is the count of elts
-	N int32 `protobuf:"varint,10,opt,name=N,proto3" json:"N,omitempty"`
+	N    int32    `protobuf:"varint,10,opt,name=N,proto3" json:"N,omitempty"`
+	Rank []uint64 `protobuf:"varint,19,rep,packed,name=Rank,proto3" json:"Rank,omitempty"`
 	// Every 1024 elts segment has a 64-bit bitmap to describe the spans in it,
 	// and another 64-bit rank: the count of `1` in preceding bitmaps.
 	Bitmap []uint64 `protobuf:"varint,20,rep,packed,name=Bitmap,proto3" json:"Bitmap,omitempty"`
@@ -211,9 +210,9 @@ Deprecated: Use SlimArray.ProtoReflect.Descriptor instead.
 #### func (*SlimArray) Get
 
 ```go
-func (m *SlimArray) Get(i int32) uint32
+func (sm *SlimArray) Get(i int32) uint32
 ```
-Get returns the uncompressed uint32 value. A Get() costs about 10 ns
+Get returns the uncompressed uint32 value. A Get() costs about 7 ns
 
 Since 0.1.1
 
@@ -241,6 +240,12 @@ func (x *SlimArray) GetN() int32
 func (x *SlimArray) GetPolynomials() []float64
 ```
 
+#### func (*SlimArray) GetRank
+
+```go
+func (x *SlimArray) GetRank() []uint64
+```
+
 #### func (*SlimArray) GetResiduals
 
 ```go
@@ -250,7 +255,7 @@ func (x *SlimArray) GetResiduals() []uint64
 #### func (*SlimArray) Len
 
 ```go
-func (m *SlimArray) Len() int
+func (sm *SlimArray) Len() int
 ```
 Len returns number of elements.
 
@@ -277,7 +282,7 @@ func (x *SlimArray) Reset()
 #### func (*SlimArray) Stat
 
 ```go
-func (m *SlimArray) Stat() map[string]int32
+func (sm *SlimArray) Stat() map[string]int32
 ```
 Stat returns a map describing memory usage.
 

@@ -10,9 +10,11 @@
 [![GoDoc](https://godoc.org/github.com/openacid/slimarray?status.svg)](http://godoc.org/github.com/openacid/slimarray)
 [![Sourcegraph](https://sourcegraph.com/github.com/openacid/slimarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/slimarray?badge)
 
-SlimArray: space efficient static `uint32` array.
+SlimArray is a space efficient, static `uint32` array.
 It uses polynomial to compress and store an array.
-A `uint32` costs only **5 bits** in a sorted array of a million number in range `[0, 1000*1000]`(17% of original data).
+With a SlimArray with a million sorted number in range `[0, 1000*1000]`,
+- a `uint32` requires only **5 bits** (17% of original data),
+- and a `Get` operation takes **7 ns**.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -28,7 +30,7 @@ A `uint32` costs only **5 bits** in a sorted array of a million number in range 
 
 {% include 'docs/report-stat.md' %}
 
-- **Fast access**: A `Get` takes 10 ns. Run and see the benchmark: `go test . -bench=.`.
+- **Fast access**: A `Get` takes 7 ns. Run and see the benchmark: `go test . -bench=.`.
 
 - **Adaptive**: It does not require the data to be totally sorted to compress
     it. E.g., SlimArray is perfect to store online user histogram data.

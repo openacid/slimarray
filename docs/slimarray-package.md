@@ -49,14 +49,14 @@ own polynomial. A span has 16*k numbers. A segment has at most 64 spans.
      16 nums    32 nums      ..
 
 
-### Uncompacted Data Structures
+### Uncompressed Data Structures
 
 A SlimArray is a compacted data structure. The original data structures are
 defined as follow(assumes original user data is `nums []uint32`):
 
-    Seg strcut {
+    Seg struct {
       SpansBitmap   uint64      // describe span layout
-      OnesCount     uint64      // count `1` in preceding Seg.
+      Rank         uint64      // count `1` in preceding Seg.
       Spans       []Span
     }
 
@@ -64,7 +64,7 @@ defined as follow(assumes original user data is `nums []uint32`):
       width         int32       // is retrieved from SpansBitmap
 
       Polynomial [3]double      //
-      Config strcut {           //
+      Config struct {           //
         Offset        int32     // residual offset
         ResidualWidth int32     // number of bits a residual requires
       }
@@ -85,8 +85,8 @@ In the above example:
     span[1] has 16*2 nums in it.
     span[2] has 16*1 nums in it.
 
-`Seg.OnesCount` caches the total count of "1" in all preceding Seg.SpansBitmap.
-This accelerate locating a Span in the packed field SlimArray.Polynomials .
+`Seg.Rank` caches the total count of "1" in all preceding Seg.SpansBitmap. This
+accelerate locating a Span in the packed field SlimArray.Polynomials .
 
 `Span.width` is the count of numbers stored in this span. It does not need to be
 stored because it can be calculated by counting the "0" between two "1" in
@@ -103,7 +103,7 @@ to have that:
 But if the preceding span has smaller residual width, the "offset" could be
 negative, e.g.: span[0] has residual of width 0 and 16 residuals, span[1] has
 residual of width 4. Then the "offset" of span[1] is `-16*4` in order to
-satisify: `(-16*4) + i * 4` is the correct residual position, for i in [16, 32).
+satisfy: `(-16*4) + i * 4` is the correct residual position, for i in [16, 32).
 
 `Span.Config.ResidualWidth` specifies the number of bits to store every residual
 in this span, it must be a power of 2: `2^k`.
@@ -118,9 +118,7 @@ SlimArray compact `Seg` into a dense format:
 
     SlimArray.Bitmap = [
       Seg[0].SpansBitmap,
-      Seg[0].OnesCount,
       Seg[1].SpansBitmap,
-      Seg[1].OnesCount,
       ... ]
 
     SlimArray.Polynomials = [

@@ -58,7 +58,7 @@
 //
 //   Seg struct {
 //     SpansBitmap   uint64      // describe span layout
-//     OnesCount     uint64      // count `1` in preceding Seg.
+//     Rank         uint64      // count `1` in preceding Seg.
 //     Spans       []Span
 //   }
 //
@@ -88,7 +88,7 @@
 //     span[1] has 16*2 nums in it.
 //     span[2] has 16*1 nums in it.
 //
-// `Seg.OnesCount` caches the total count of "1" in all preceding Seg.SpansBitmap.
+// `Seg.Rank` caches the total count of "1" in all preceding Seg.SpansBitmap.
 // This accelerate locating a Span in the packed field SlimArray.Polynomials .
 //
 // `Span.width` is the count of numbers stored in this span.
@@ -120,9 +120,7 @@
 //
 //   SlimArray.Bitmap = [
 //     Seg[0].SpansBitmap,
-//     Seg[0].OnesCount,
 //     Seg[1].SpansBitmap,
-//     Seg[1].OnesCount,
 //     ... ]
 //
 //   SlimArray.Polynomials = [
@@ -209,14 +207,15 @@ func NewU32(nums []uint32) *SlimArray {
 }
 
 // Get returns the uncompressed uint32 value.
-// A Get() costs about 10 ns
+// A Get() costs about 7 ns
 //
 // Since 0.1.1
 func (sm *SlimArray) Get(i int32) uint32 {
 
 	// The index of a segment
-	bitmapI := (i >> segSizeShift) << 1
-	spansBitmap, rank := sm.Bitmap[bitmapI], sm.Bitmap[bitmapI|1]
+	bitmapI := i >> segSizeShift
+	spansBitmap := sm.Bitmap[bitmapI]
+	rank := sm.Rank[bitmapI]
 
 	i = i & segSizeMask
 	x := float64(i)
@@ -265,7 +264,7 @@ func (sm *SlimArray) Len() int {
 //
 // Since 0.1.1
 func (sm *SlimArray) Stat() map[string]int32 {
-	segCnt := len(sm.Bitmap) / 2
+	segCnt := len(sm.Bitmap)
 	totalmem := size.Of(sm)
 
 	spanCnt := len(sm.Polynomials) / 3
@@ -304,14 +303,15 @@ func (sm *SlimArray) addSeg(nums []uint32) {
 	bm, polynomials, configs, words := newSeg(nums, int64(len(sm.Residuals)*64))
 
 	var r uint64
-	if len(sm.Bitmap) > 0 {
-		l := len(sm.Bitmap)
-		r = sm.Bitmap[l-1] + uint64(bits.OnesCount64(sm.Bitmap[l-2]))
+	l := len(sm.Rank)
+	if l > 0 {
+		r = sm.Rank[l-1] + uint64(bits.OnesCount64(sm.Bitmap[l-1]))
 	} else {
 		r = 0
 	}
 
-	sm.Bitmap = append(sm.Bitmap, bm, r)
+	sm.Bitmap = append(sm.Bitmap, bm)
+	sm.Rank = append(sm.Rank, r)
 	sm.Polynomials = append(sm.Polynomials, polynomials...)
 	sm.Configs = append(sm.Configs, configs...)
 	sm.Residuals = append(sm.Residuals, words...)

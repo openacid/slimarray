@@ -110,7 +110,7 @@ func TestSlimArray_eltWidthSmall(t *testing.T) {
 
 	a := NewU32(nums)
 	fmt.Println(a.Stat())
-	ta.True(a.Stat()["bits/elt"] <= 4)
+	ta.True(a.Stat()["bits/elt"] <= 5)
 
 }
 
@@ -252,7 +252,7 @@ func TestSlimArray_Stat(t *testing.T) {
 		"mem_total": st["mem_total"], // do not compare this
 		"spans/seg": 4,
 		"span_cnt":  5,
-		"bits/elt":  10,
+		"bits/elt":  11,
 	}
 
 	ta.Equal(want, st)
