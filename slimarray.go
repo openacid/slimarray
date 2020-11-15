@@ -198,9 +198,14 @@ func NewU32(nums []uint32) *SlimArray {
 		pa.addSeg(nums)
 	}
 
+	// shrink capacity to len.
+	pa.Rank = append(pa.Rank[:0:0], pa.Rank...)
+	pa.Bitmap = append(pa.Bitmap[:0:0], pa.Bitmap...)
+	pa.Polynomials = append(pa.Polynomials[:0:0], pa.Polynomials...)
+	pa.Configs = append(pa.Configs[:0:0], pa.Configs...)
+
 	// Add another empty word to avoid panic for residual of width = 0.
 	pa.Residuals = append(pa.Residuals, 0)
-	// shrink capacity to len.
 	pa.Residuals = append(pa.Residuals[:0:0], pa.Residuals...)
 
 	return pa
