@@ -77,10 +77,10 @@ defined as follow(assumes original user data is `nums []uint32`):
 
 A span stores 16*k int32 in it, where k ∈ [1, 64).
 
-`Seg.SpansBitmap` describes the layout of Span-s in a Seg. A "1" at i-th bit and
-a "1" at j-th bit means a Span stores `nums[i*16:j*16]`, e.g.:
+`Seg.SpansBitmap` describes the layout of Span-s in a Seg. The i-th "1"
+indicates where the last 16 numbers are in the i-th Span. e.g.:
 
-    100101110000......
+    001011110000......
     <-- least significant bit
 
 In the above example:

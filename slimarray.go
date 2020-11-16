@@ -76,10 +76,10 @@
 // A span stores 16*k int32 in it, where k ∈ [1, 64).
 //
 // `Seg.SpansBitmap` describes the layout of Span-s in a Seg.
-// A "1" at i-th bit and a "1" at j-th bit means a Span stores
-// `nums[i*16:j*16]`, e.g.:
+// The i-th "1" indicates where the last 16 numbers are in the i-th Span.
+// e.g.:
 //
-//     100101110000......
+//     001011110000......
 //     <-- least significant bit
 //
 // In the above example:
@@ -274,7 +274,7 @@ func (sm *SlimArray) Stat() map[string]int32 {
 	segCnt := len(sm.Bitmap)
 	totalmem := size.Of(sm)
 
-	spanCnt := len(sm.Polynomials) / 3
+	spanCnt := len(sm.Polynomials) / polyCoefCnt
 	memWords := len(sm.Residuals) * 8
 	widthAvg := 0
 	for i := 0; i < spanCnt; i++ {
