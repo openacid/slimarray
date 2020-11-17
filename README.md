@@ -41,27 +41,14 @@ With a SlimArray with a million sorted number in range `[0, 1000*1000]`,
 - **Space efficient**: In a sorted array, an elt only takes about **10 bits** to
     store a 32-bit int.
 
-```
-== Memory cost stats of sorted random uint array ==
+| Data size | Data Set                | gzip size | slimarry size | avg size   | ratio |
+| --:       | :--                     | --:       | :--           | --:        | --:   |
+| 1,000     | rand u32: [0, 1000]     | x         | 824 byte      | 6 bit/elt  | 18%   |
+| 1,000,000 | rand u32: [0, 1000,000] | x         | 702 KB        | 5 bit/elt  | 15%   |
+| 1,000,000 | IPv4 DB                 | 2 MB      | 2 MB          | 16 bit/elt | 50%   |
+| 600       | [slim][] star count     | 602 byte  | 832 byte      | 10 bit/elt | 26%   |
 
-n=1000 rng=[0, 1000]:
-
-           n: 1000
-   mem_total: 824
-    bits/elt: 6
-
-n=1000000 rng=[0, 1000000]:
-
-           n: 1000000
-   mem_total: 702624
-    bits/elt: 5
-
-n=1000000 rng=[0, 1000000000]:
-
-           n: 1000000
-   mem_total: 2078304
-    bits/elt: 16
-```
+[slim]: https://github.com/openacid/slim
 
 - **Fast**: `Get()`: 7 ns/op. Building: 150 ns/elt. Run and see the benchmark: `go test . -bench=.`.
 
@@ -89,6 +76,7 @@ a bitmap based or tree-like data structure does not allow.
 In the [ipv4-list](./example/iplist) example, we feed 450,000 ipv4 to SlimArray.
 We see that SlimArray costs as small as gzip-ed data(`2.1 MB vs 2.0 MB`),
 while it provides instance access to the data without decompressing it.
+And in the [slimstar](./example/slimstar) example, SlimArray memory usage vs gzip-ed data is 832 bytes vs 602 bytes.
 
 
 # Limitation
