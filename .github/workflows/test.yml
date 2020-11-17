@@ -38,4 +38,7 @@ jobs:
           run: go test ./...
 
         - name: test examples iplist
-          run: cd example/iplist && gunzip iplist.go.gz && go run iplist.go
+          run: cd example/iplist && go run iplist.go
+
+        - name: test examples slimstar
+          run: cd example/slimstar && go run slimstar.go
