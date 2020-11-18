@@ -178,13 +178,14 @@ const (
 // evalPoly2 evaluates a polynomial with degree=2.
 //
 // Since 0.1.1
-func evalPoly2(poly []float64, x float64) float64 {
-	return poly[0] + poly[1]*x + poly[2]*x*x
+func evalPoly2(poly []float64, x int32) float64 {
+	v := float64(x)
+	return poly[0] + poly[1]*v + poly[2]*v*v
 }
 
 // NewU32 creates a "SlimArray" array from a slice of uint32.
 //
-// A NewU32() costs about 150 ns/elt.
+// A NewU32() costs about 110 ns/elt.
 //
 // Since 0.1.1
 func NewU32(nums []uint32) *SlimArray {
@@ -327,21 +328,19 @@ func (sm *SlimArray) addSeg(nums []uint32) {
 func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 
 	n := int32(len(nums))
-	xs := make([]float64, n)
 	ys := make([]float64, n)
 
 	for i, v := range nums {
-		xs[i] = float64(i)
 		ys[i] = float64(v)
 	}
 
 	// create polynomial fit sessions for every 16 numbers
-	fts := initFittings(xs, ys, minSpan)
+	fts := initFittings(n, ys, minSpan)
 
-	spans := findMinFittingsNew(xs, ys, fts)
+	spans := findMinFittingsNew(ys, fts)
 
-	polynomials := make([]float64, 0)
-	configs := make([]int64, 0)
+	polynomials := make([]float64, 0, 1024/16)
+	configs := make([]int64, 0, 1024/16)
 	words := make([]uint64, n) // max size
 
 	// Using a bitmap to describe which spans a polynomial spans
@@ -371,7 +370,7 @@ func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 
 		for j := sp.s; j < sp.e; j++ {
 
-			v := evalPoly2(sp.poly, xs[j])
+			v := evalPoly2(sp.poly, j)
 
 			// It may overflow but the result is correct because (a+b) % p =
 			// (a%p + b%p) % p
@@ -389,10 +388,9 @@ func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 	return segPolyBitmap, polynomials, configs, words[:nWords]
 }
 
-func initFittings(xs, ys []float64, spanSize int32) []*polyfit.Fitting {
+func initFittings(n int32, ys []float64, spanSize int32) []*polyfit.Fit {
 
-	fts := make([]*polyfit.Fitting, 0)
-	n := int32(len(xs))
+	fts := make([]*polyfit.Fit, 0, n/spanSize+1)
 
 	for i := int32(0); i < n; i += spanSize {
 		s := i
@@ -401,14 +399,14 @@ func initFittings(xs, ys []float64, spanSize int32) []*polyfit.Fitting {
 			e = n
 		}
 
-		ft := polyfit.NewFitting(xs[s:e], ys[s:e], polyDegree)
+		ft := polyfit.NewFitIntRange(int(s), int(e), ys[s:e], polyDegree)
 		fts = append(fts, ft)
 	}
 	return fts
 }
 
 type span struct {
-	ft            *polyfit.Fitting
+	ft            *polyfit.Fit
 	origPoly      []float64
 	poly          []float64
 	residualWidth uint32
@@ -440,7 +438,7 @@ func (sp *span) String() string {
 
 // findMinFittingsNew by merge adjacent 16-numbers span.
 // If two spans has a common trend they should be described with one polynomial.
-func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
+func findMinFittingsNew(ys []float64, fts []*polyfit.Fit) []*span {
 
 	spans := make([]*span, len(fts))
 	merged := make([]*span, len(fts)-1)
@@ -451,7 +449,7 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 
 		e = s + int32(ft.N)
 
-		sp := newSpan(xs, ys, ft, s, e)
+		sp := newSpan(ys, ft, s, e)
 		spans[i] = sp
 		s = e
 	}
@@ -460,7 +458,7 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 		sp2 := spans[i+1]
 
 		merged[i] = sp.Copy()
-		mergeTwoSpan(xs, ys, merged[i], sp2)
+		mergeTwoSpan(ys, merged[i], sp2)
 	}
 
 	for len(merged) > 0 {
@@ -504,13 +502,13 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 			// a  b  c  d
 			// abc bc cd
 			if maxI > 0 {
-				mergeTwoSpan(xs, ys, merged[maxI-1], spans[maxI+1])
+				mergeTwoSpan(ys, merged[maxI-1], spans[maxI+1])
 			}
 
 			// a  bcd  c  d
 			// abc bc bcd
 			if maxI < len(merged)-1 {
-				mergeTwoSpan(xs, ys, spans[maxI], merged[maxI+1])
+				mergeTwoSpan(ys, spans[maxI], merged[maxI+1])
 				merged[maxI+1] = spans[maxI]
 			}
 
@@ -532,23 +530,23 @@ func findMinFittingsNew(xs, ys []float64, fts []*polyfit.Fitting) []*span {
 	return spans
 }
 
-func mergeTwoSpan(xs, ys []float64, a, b *span) {
+func mergeTwoSpan(ys []float64, a, b *span) {
 	a.ft.Merge(b.ft)
 	a.e = b.e
 
 	// policy: re-fit curve
 	a.solve()
-	a.updatePolyAndStat(xs, ys)
+	a.updatePolyAndStat(ys)
 
 	// // policy: mean curve
 	// // twice faster than re-fit, also results in twice memory cost.
 	// for i, c := range b.origPoly {
 	//     a.origPoly[i] = (a.origPoly[i] + c) / 2
 	// }
-	// a.updatePolyAndStat(xs, ys)
+	// a.updatePolyAndStat(ys)
 }
 
-func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) *span {
+func newSpan(ys []float64, ft *polyfit.Fit, s, e int32) *span {
 
 	sp := &span{
 		ft: ft,
@@ -556,7 +554,7 @@ func newSpan(xs, ys []float64, ft *polyfit.Fitting, s, e int32) *span {
 		e:  e,
 	}
 	sp.solve()
-	sp.updatePolyAndStat(xs, ys)
+	sp.updatePolyAndStat(ys)
 
 	return sp
 }
@@ -565,9 +563,9 @@ func (sp *span) solve() {
 	sp.origPoly = sp.ft.Solve()
 }
 
-func (sp *span) updatePolyAndStat(xs, ys []float64) {
+func (sp *span) updatePolyAndStat(ys []float64) {
 	s, e := sp.s, sp.e
-	max, min := maxMinResiduals(sp.origPoly, xs[s:e], ys[s:e])
+	max, min := sp.maxMinResiduals(ys[s:e])
 	margin := int64(math.Ceil(max - min))
 
 	sp.poly = append([]float64{}, sp.origPoly...)
@@ -609,13 +607,14 @@ func memCost(poly []float64, residualWidth uint32, n int32) int {
 // maxMinResiduals finds max and min residuals along a curve.
 //
 // Since 0.1.1
-func maxMinResiduals(poly, xs, ys []float64) (float64, float64) {
+func (sp *span) maxMinResiduals(ys []float64) (float64, float64) {
 
 	max, min := float64(0), float64(0)
 
-	for i, x := range xs {
-		v := evalPoly2(poly, x)
-		diff := ys[i] - v
+	for i := sp.s; i < sp.e; i++ {
+
+		v := evalPoly2(sp.origPoly, i)
+		diff := ys[i-sp.s] - v
 		if diff > max {
 			max = diff
 		}

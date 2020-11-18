@@ -27,7 +27,7 @@ func Example() {
 	xs := []float64{1, 2, 3, 4}
 	ys := []float64{6, 5, 7, 7}
 
-	f := NewFitting(xs, ys, 2)
+	f := NewFit(xs, ys, 2)
 	poly := f.Solve()
 
 	fmt.Printf("y = %.1f + %.1fx + %.1fx²\n",

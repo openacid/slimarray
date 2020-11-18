@@ -11,10 +11,10 @@ func TestNewFitting(t *testing.T) {
 
 	ta := assert.New(t)
 
-	var f *Fitting
+	var f *Fit
 	var want string
 
-	f = NewFitting([]float64{1}, []float64{1}, 3)
+	f = NewFit([]float64{1}, []float64{1}, 3)
 	want = `
 n=1 degree=3
 1.000 1.000 1.000 1.000
@@ -28,7 +28,7 @@ n=1 degree=3
 1.000`[1:]
 	ta.Equal(want, f.String())
 
-	f = NewFitting([]float64{1, 1}, []float64{1, 1}, 3)
+	f = NewFit([]float64{1, 1}, []float64{1, 1}, 3)
 	want = `
 n=2 degree=3
 2.000 2.000 2.000 2.000
@@ -42,7 +42,7 @@ n=2 degree=3
 2.000`[1:]
 	ta.Equal(want, f.String())
 
-	f = NewFitting([]float64{1, 2}, []float64{1, 2}, 3)
+	f = NewFit([]float64{1, 2}, []float64{1, 2}, 3)
 	want = `
 n=2 degree=3
 2.000 3.000 5.000 9.000
@@ -65,7 +65,7 @@ func TestFitting_Add(t *testing.T) {
 	xs := []float64{1, 2, 3, 4}
 	ys := []float64{1, 2, 3, 4}
 
-	f := NewFitting([]float64{}, []float64{}, 3)
+	f := NewFit([]float64{}, []float64{}, 3)
 	ta.Equal(0, f.N)
 
 	for i, x := range xs {
@@ -81,10 +81,10 @@ func TestFitting_Merge(t *testing.T) {
 	xs := []float64{1, 2, 3, 4}
 	ys := []float64{1, 2, 3, 4}
 
-	f := NewFitting(xs, ys, 3)
+	f := NewFit(xs, ys, 3)
 
-	fa := NewFitting(xs[:2], ys[:2], 3)
-	fb := NewFitting(xs[2:], ys[2:], 3)
+	fa := NewFit(xs[:2], ys[:2], 3)
+	fb := NewFit(xs[2:], ys[2:], 3)
 
 	fa.Merge(fb)
 
@@ -92,7 +92,7 @@ func TestFitting_Merge(t *testing.T) {
 
 	// panic if degree differs
 
-	ta.Panics(func() { f.Merge(NewFitting(xs[:2], ys[:2], 4)) })
+	ta.Panics(func() { f.Merge(NewFit(xs[:2], ys[:2], 4)) })
 }
 
 func TestFitting_Copy(t *testing.T) {
@@ -102,7 +102,7 @@ func TestFitting_Copy(t *testing.T) {
 	xs := []float64{1, 2, 3, 4}
 	ys := []float64{1, 2, 3, 4}
 
-	fa := NewFitting(xs, ys, 3)
+	fa := NewFit(xs, ys, 3)
 	fb := fa.Copy()
 
 	ta.Equal(fa.String(), fb.String())
@@ -131,7 +131,7 @@ func TestFitting_Solve(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		f := NewFitting(xs, ys, c.degree)
+		f := NewFit(xs, ys, c.degree)
 
 		poly := f.Solve()
 		ta.Equal(c.degree+1, len(poly))
@@ -162,7 +162,7 @@ func BenchmarkFitting_Solve1(b *testing.B) {
 	xs := []float64{1, 2, 3, 4}
 	ys := []float64{6, 5, 7, 10}
 
-	f := NewFitting(xs, ys, 1)
+	f := NewFit(xs, ys, 1)
 	s := 0
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -178,7 +178,7 @@ func BenchmarkFitting_Solve2(b *testing.B) {
 	xs := []float64{1, 2, 3, 4}
 	ys := []float64{6, 5, 7, 10}
 
-	f := NewFitting(xs, ys, 2)
+	f := NewFit(xs, ys, 2)
 	s := 0
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -194,7 +194,7 @@ func BenchmarkFitting_Solve3(b *testing.B) {
 	xs := []float64{1, 2, 3, 4}
 	ys := []float64{6, 5, 7, 10}
 
-	f := NewFitting(xs, ys, 3)
+	f := NewFit(xs, ys, 3)
 	s := 0
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

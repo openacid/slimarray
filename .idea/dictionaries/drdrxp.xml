@@ -3,7 +3,10 @@
     <words>
       <w>coef</w>
       <w>elts</w>
+      <w>polyfit</w>
       <w>slimarray</w>
+      <w>βᵀxᵀ</w>
+      <w>βᵀxᵀy</w>
     </words>
   </dictionary>
 </component>

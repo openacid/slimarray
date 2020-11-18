@@ -198,7 +198,7 @@ func NewU32(nums []uint32) *SlimArray
 ```
 NewU32 creates a "SlimArray" array from a slice of uint32.
 
-A NewU32() costs about 150 ns/elt.
+A NewU32() costs about 110 ns/elt.
 
 Since 0.1.1
 

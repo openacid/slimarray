@@ -19,7 +19,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Fitting models a polynomial y from sample points xs and ys, to minimizes the squared residuals.
+// Fit models a polynomial y from sample points xs and ys, to minimizes the squared residuals.
 // It returns coefficients of the polynomial y:
 //
 //    f(x) = β₁ + β₂x + β₃x² + ...
@@ -52,7 +52,7 @@ import (
 // See https://en.wikipedia.org/wiki/Least_squares#Linear_least_squares
 //
 // Since 0.1.0
-type Fitting struct {
+type Fit struct {
 	N      int
 	Degree int
 
@@ -62,17 +62,129 @@ type Fitting struct {
 	xty []float64
 }
 
-// NewFitting creates a new polynomial fitting context, with points and the
+var (
+	// XTXCache3 is the cache of XᵀX of degree 2 with integer matrix X = [[1,0,0], [1,1,1], [1,2,4]...].
+	// XTXCache3[l] is the cached XᵀX of X = [0..l], the first l integers.
+	XTXCache3 [1024 + 1][]float64
+
+	// PowCache caches x^i in PowCache[x][i].
+	PowCache [1024][5]float64
+)
+
+func init() {
+
+	initPowCache()
+
+	m := 3
+
+	XTXCache3[0] = make([]float64, m*m)
+	for i := 0; i < m*m; i++ {
+		XTXCache3[0][i] = 0
+	}
+
+	// |    1  |   |   X    |
+	// | Xᵀ i  | * | 1 i i² | = XᵀX + IᵀI
+	// |    i² |   |        |
+	//
+	//       | 1  i  i² |
+	// IᵀI = | i  i² i³ |
+	//       | i² i³ i⁴ |
+
+	for k := 0; k < 1024; k++ {
+		v := float64(k)
+		xPowers := []float64{1, v, v * v, v * v * v, v * v * v * v}
+
+		XTXCache3[k+1] = make([]float64, m*m)
+
+		for i := 0; i < m; i++ {
+			for j := 0; j < m; j++ {
+				XTXCache3[k+1][i*m+j] = XTXCache3[k][i*m+j] + xPowers[i+j]
+			}
+		}
+	}
+}
+
+func initPowCache() {
+	for i := 0; i < 1024; i++ {
+		v := float64(i)
+		PowCache[i][0] = 1
+		PowCache[i][1] = v
+		PowCache[i][2] = v * v
+		PowCache[i][3] = v * v * v
+		PowCache[i][4] = v * v * v * v
+	}
+
+}
+
+// getCachedXTX3 retrieves a cached 3*3 matrix of Xᵀ * X, where X = [[1, a, a^2], [1,(a+1),(a+1)^2]...]
+func getCachedXTX3(a, b int, rst []float64) {
+	m := 3
+	for i := 0; i < m*m; i++ {
+		rst[i] = XTXCache3[b][i] - XTXCache3[a][i]
+	}
+}
+
+// NewFitIntRange is similar to NewFit, except
+// it only accept integer value for x, and the value of x must be in range
+// [0, 1024). Integer is optimized by caching XᵀX values.
+//
+// And the input must satisfies:
+//   len(ys) == xEnd - xStart
+//
+// Since 0.1.3
+func NewFitIntRange(xStart, xEnd int, ys []float64, degree int) *Fit {
+
+	n := xEnd - xStart
+
+	m := degree + 1
+
+	f := &Fit{
+		N:      0,
+		Degree: degree,
+
+		xtx: make([]float64, m*m),
+		xty: make([]float64, m),
+	}
+
+	for i := 0; i < m; i++ {
+		f.xty[i] = 0
+	}
+
+	if m == 3 {
+		getCachedXTX3(xStart, xEnd, f.xtx)
+
+		for i := 0; i < n; i++ {
+			for j := 0; j < m; j++ {
+				f.xty[j] += PowCache[xStart+i][j] * ys[i]
+			}
+		}
+
+		f.N = n
+	} else {
+		for i := 0; i < m*m; i++ {
+			f.xtx[i] = 0
+		}
+
+		for i := 0; i < n; i++ {
+			f.Add(float64(xStart+i), ys[i])
+		}
+
+	}
+
+	return f
+}
+
+// NewFit creates a new polynomial fitting context, with points and the
 // degree of the polynomial.
 //
 // Since 0.1.0
-func NewFitting(xs, ys []float64, degree int) *Fitting {
+func NewFit(xs, ys []float64, degree int) *Fit {
 
 	n := len(xs)
 
 	m := degree + 1
 
-	f := &Fitting{
+	f := &Fit{
 		N:      0,
 		Degree: degree,
 
@@ -98,8 +210,8 @@ func NewFitting(xs, ys []float64, degree int) *Fitting {
 // Copy into a new instance.
 //
 // Since 0.1.3
-func (f *Fitting) Copy() *Fitting {
-	b := &Fitting{
+func (f *Fit) Copy() *Fit {
+	b := &Fit{
 		N:      f.N,
 		Degree: f.Degree,
 
@@ -116,25 +228,25 @@ func (f *Fitting) Copy() *Fitting {
 // Add a point(x, y) into this fitting.
 //
 // Since 0.1.0
-func (f *Fitting) Add(x, y float64) {
+func (f *Fit) Add(x, y float64) {
 
 	m := f.Degree + 1
 
-	xpows := make([]float64, m)
+	xPowers := make([]float64, m)
 	v := float64(1)
 	for i := 0; i < m; i++ {
-		xpows[i] = v
+		xPowers[i] = v
 		v *= x
 	}
 
 	for i := 0; i < m; i++ {
 		for j := 0; j < m; j++ {
-			f.xtx[i*m+j] += xpows[i] * xpows[j]
+			f.xtx[i*m+j] += xPowers[i] * xPowers[j]
 		}
 	}
 
 	for i := 0; i < m; i++ {
-		f.xty[i] += xpows[i] * y
+		f.xty[i] += xPowers[i] * y
 	}
 
 	f.N++
@@ -148,7 +260,7 @@ func (f *Fitting) Add(x, y float64) {
 //    |X₂|    |X₂|
 //
 // Since 0.1.0
-func (f *Fitting) Merge(b *Fitting) {
+func (f *Fit) Merge(b *Fit) {
 
 	if f.Degree != b.Degree {
 		panic(fmt.Sprintf("different degree: %d %d", f.Degree, b.Degree))
@@ -173,7 +285,7 @@ func (f *Fitting) Merge(b *Fitting) {
 // polynomial of degree n that passes exactly n+1 points.
 //
 // Since 0.1.0
-func (f *Fitting) Solve() []float64 {
+func (f *Fit) Solve() []float64 {
 
 	m := f.Degree + 1
 
@@ -208,8 +320,8 @@ func (f *Fitting) Solve() []float64 {
 
 	// Sometimes it returns error about a large condition number, e.g.: matrix
 	// singular or near-singular with condition number 1.3240e+16.
-	// The β is inaccurate in this case(near sigular matrix) but it does not
-	// matteer. The most common case having this error is to fit points less
+	// The β is inaccurate in this case(near singular matrix) but it does not
+	// matter. The most common case having this error is to fit points less
 	// than degree+1, e.g., fit y = ax² + bx + c with only two points, or with
 	// several points on a straight line.
 	_ = err
@@ -287,10 +399,10 @@ func solve3(v []float64, y []float64, into []float64) {
 //     1.000
 //
 // Since 0.1.0
-func (f *Fitting) String() string {
+func (f *Fit) String() string {
 
 	m := f.Degree + 1
-	ss := []string{}
+	var ss []string
 
 	xtx := f.matrixStrings(f.xtx)
 
@@ -304,21 +416,21 @@ func (f *Fitting) String() string {
 	return strings.Join(ss, "\n")
 }
 
-func (f *Fitting) matrixStrings(mat []float64) []string {
+func (f *Fit) matrixStrings(mat []float64) []string {
 
 	m := f.Degree + 1
 
-	ss := []string{}
+	var ss []string
 
 	for i := 0; i < m; i++ {
-		line := []string{}
+		var line []string
 		for j := 0; j < m; j++ {
 			s := fmt.Sprintf("%3.3f", mat[i*m+j])
 			line = append(line, s)
 		}
 
-		linestr := strings.Join(line, " ")
-		ss = append(ss, linestr)
+		lineStr := strings.Join(line, " ")
+		ss = append(ss, lineStr)
 	}
 
 	return ss
