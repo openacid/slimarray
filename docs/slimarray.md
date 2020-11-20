@@ -281,6 +281,19 @@ func (x *SlimArray) ProtoReflect() protoreflect.Message
 func (x *SlimArray) Reset()
 ```
 
+#### func (*SlimArray) Slice
+
+```go
+func (sm *SlimArray) Slice(start int32, end int32, rst []uint32)
+```
+Slice returns a slice of uncompressed uint32, e.g., similar to foo :=
+nums[start:end]. `rst` is used to store returned values, it has to have at least
+`end-start` elt in it.
+
+A Slice() costs about 3.8 ns, when retrieving 100 or more values a time.
+
+Since 0.1.3
+
 #### func (*SlimArray) Stat
 
 ```go
