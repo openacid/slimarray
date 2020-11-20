@@ -335,7 +335,7 @@ func (q *queryContext) initSeg(i int32) {
 func (q *queryContext) initSpan() {
 	q.spanUnitIdx = q.inSegIdx >> 4
 	q.bitmap = q.spansBitmap & bitmap.Mask[q.spanUnitIdx]
-	q.spanIdx = int(q.rank) + bits.OnesCount64(q.bitmap)
+	q.spanIdx = q.rank + bits.OnesCount64(q.bitmap)
 	polyOffset := q.spanIdx * polyCoefCnt
 	q.b0 = q.sm.Polynomials[polyOffset]
 	q.b1 = q.sm.Polynomials[polyOffset+1]
