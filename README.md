@@ -16,6 +16,9 @@ With a SlimArray with a million sorted number in range `[0, 1000*1000]`,
 - a `uint32` requires only **5 bits** (17% of original data);
 - compressing a `uint32` takes **110 ns**, e.g., 9 million insert per second;
 - reading a `uint32` with `Get()` takes **7 ns**.
+- batch reading with `Slice()` takes **3.8 ns**/elt.
+
+中文介绍: [https://blog.openacid.com/algo/slimarray/](https://blog.openacid.com/algo/slimarray/)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
