@@ -3,14 +3,11 @@ package slimarray
 import (
 	"fmt"
 	"math/rand"
-	sync "sync"
+	"sync"
 	"testing"
 	"time"
 
-	proto "github.com/golang/protobuf/proto"
-
-	// proto "google.golang.org/protobuf/proto"
-
+	"github.com/golang/protobuf/proto"
 	"github.com/openacid/low/size"
 	"github.com/openacid/testutil"
 	"github.com/stretchr/testify/require"
@@ -128,6 +125,28 @@ func TestSlimArray_default(t *testing.T) {
 
 	fmt.Println(size.Stat(a, 6, 3))
 	ta.Equal(int32(3), st["elt_width"])
+
+}
+
+func TestSlimArray_Slice(t *testing.T) {
+
+	ta := require.New(t)
+
+	a := NewU32(testNums)
+
+	for i := 0; i < len(testNums); i += 3 {
+		for j := i; j < len(testNums)+10; j += 5 {
+			e := j
+			if e > len(testNums) {
+				e = len(testNums)
+			}
+
+			rst := make([]uint32, e-i)
+			a.Slice(int32(i), int32(e), rst)
+			ta.Equal(testNums[i:e], rst)
+
+		}
+	}
 
 }
 
@@ -321,6 +340,37 @@ func BenchmarkSlimArray_Get(b *testing.B) {
 	}
 
 	Output = int(s)
+}
+
+func BenchmarkSlimArray_Slice(b *testing.B) {
+
+	n := int32(1024 * 1024)
+	mask := int(n - 1)
+	step := int32(128)
+	ns := testutil.RandU32Slice(0, n, step)
+
+	s := uint32(0)
+
+	a := NewU32(ns)
+	// fmt.Println(a.Stat())
+
+	for _, batchSize := range []int{1, 10, 100, 1000, 10000} {
+
+		rst := make([]uint32, batchSize)
+		b.Run(
+			fmt.Sprintf(
+				"Slice() n=:%d", batchSize,
+			),
+			func(b *testing.B) {
+
+				for i := 0; i < b.N/batchSize; i++ {
+					a.Slice(int32(i&mask), int32(i&mask+batchSize), rst)
+					s += rst[0]
+				}
+
+				Output = int(s)
+			})
+	}
 }
 
 func BenchmarkNewU32(b *testing.B) {

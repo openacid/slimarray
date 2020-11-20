@@ -155,10 +155,11 @@ import (
 )
 
 const (
-	// The smallest span is 16 numbers.
+	// The unit of a span, i.e., 16 numbers.
+	// A span has 16*n numbers in it.
 	// Two adjacent span will be merged into one if the result span costs less
 	// memory.
-	minSpan = int32(16)
+	spanUnit = int32(16)
 
 	// Segment size. A segment consists of at most 64 spans.
 	segSize = 1024
@@ -180,7 +181,7 @@ const (
 // Since 0.1.1
 func evalPoly2(poly []float64, x int32) float64 {
 	v := float64(x)
-	return poly[0] + poly[1]*v + poly[2]*v*v
+	return poly[0] + v*poly[1] + v*v*poly[2]
 }
 
 // NewU32 creates a "SlimArray" array from a slice of uint32.
@@ -236,7 +237,7 @@ func (sm *SlimArray) Get(i int32) uint32 {
 
 	j := spanIdx * polyCoefCnt
 	p := sm.Polynomials
-	v := int64(p[j] + p[j+1]*x + p[j+2]*x*x)
+	v := int64(p[j] + x*p[j+1] + x*x*p[j+2])
 
 	config := sm.Configs[spanIdx]
 	residualWidth := config & 0xff
@@ -250,6 +251,100 @@ func (sm *SlimArray) Get(i int32) uint32 {
 	d = d >> uint(resBitIdx&63)
 
 	return uint32(v + int64(d&bitmap.Mask[residualWidth]))
+}
+
+// Slice returns a slice of uncompressed uint32, e.g., similar to foo := nums[start:end].
+// `rst` is used to store returned values, it has to have at least `end-start` elt in it.
+//
+// A Slice() costs about 3.8 ns,
+// when retrieving 100 or more values a time.
+//
+// Since 0.1.3
+func (sm *SlimArray) Slice(start int32, end int32, rst []uint32) {
+
+	i0 := start
+	if end > sm.N {
+		end = sm.N
+	}
+
+	ctx := &queryContext{
+		sm: sm,
+	}
+
+	ctx.initSeg(start)
+	ctx.initSpan()
+
+	resBitIdx := ctx.offset + int64(ctx.inSegIdx)*ctx.residualWidth
+
+	for ; start < end; start++ {
+
+		// eval y = a + bx + cx²
+
+		x := float64(ctx.inSegIdx)
+		v := int64(ctx.b0 + x*ctx.b1 + x*x*ctx.b2)
+
+		// extract residual from packed []uint64
+		d := sm.Residuals[resBitIdx>>6]
+		d = d >> uint(resBitIdx&63)
+
+		rst[start-i0] = uint32(v + int64(d&ctx.resMask))
+
+		ctx.inSegIdx++
+		resBitIdx += ctx.residualWidth
+
+		// entered next span-unit
+		if ctx.inSegIdx&0x0f == 0 {
+
+			// entered next seg
+			if ctx.inSegIdx == segSize {
+				ctx.initSeg(start)
+			}
+
+			ctx.initSpan()
+			resBitIdx = ctx.offset + int64(ctx.inSegIdx)*ctx.residualWidth
+		}
+	}
+}
+
+type queryContext struct {
+	sm *SlimArray
+	// seg context
+	segIdx      int32
+	spansBitmap uint64
+	rank        int
+	inSegIdx    int32
+
+	// span context
+	spanUnitIdx   int32
+	bitmap        uint64
+	spanIdx       int
+	b0, b1, b2    float64
+	spanConfig    int64
+	residualWidth int64
+	resMask       uint64
+	offset        int64
+}
+
+func (q *queryContext) initSeg(i int32) {
+	q.segIdx = i >> segSizeShift
+	q.spansBitmap = q.sm.Bitmap[q.segIdx]
+	q.rank = int(q.sm.Rank[q.segIdx])
+	q.inSegIdx = i & segSizeMask
+}
+
+func (q *queryContext) initSpan() {
+	q.spanUnitIdx = q.inSegIdx >> 4
+	q.bitmap = q.spansBitmap & bitmap.Mask[q.spanUnitIdx]
+	q.spanIdx = int(q.rank) + bits.OnesCount64(q.bitmap)
+	polyOffset := q.spanIdx * polyCoefCnt
+	q.b0 = q.sm.Polynomials[polyOffset]
+	q.b1 = q.sm.Polynomials[polyOffset+1]
+	q.b2 = q.sm.Polynomials[polyOffset+2]
+	q.spanConfig = q.sm.Configs[q.spanIdx]
+	q.residualWidth = q.spanConfig & 0xff
+	q.resMask = bitmap.Mask[q.residualWidth]
+	q.offset = q.spanConfig >> 8
+
 }
 
 // Len returns number of elements.
@@ -335,7 +430,7 @@ func newSeg(nums []uint32, start int64) (uint64, []float64, []int64, []uint64) {
 	}
 
 	// create polynomial fit sessions for every 16 numbers
-	fts := initFittings(n, ys, minSpan)
+	fts := initFittings(n, ys, spanUnit)
 
 	spans := findMinFittingsNew(ys, fts)
 
