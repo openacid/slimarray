@@ -1,5 +1,8 @@
 # `grep -v` does not work on travis. No time to find out why -- xp 2019 Feb 22
-PKGS := $(shell go list ./... | grep -v "^github.com/openacid/slimarray/\(vendor\|prototype\)")
+
+TOP_PKG := $(shell go list .)
+NAME := $(shell go list . | awk -F/ '{print $$NF}')
+PKGS := $(shell go list ./... | grep -v "^$(TOP_PKG)/\(vendor\|prototype\)")
 
 # PKGS := github.com/openacid/slimarray/array \
 #         github.com/openacid/slimarray/bit \
@@ -73,7 +76,7 @@ doc:
 
 
 readme: doc
-	python ./scripts/build_readme.py
+	python ./scripts/build_md.py
 	# brew install nodejs
 	# npm install -g doctoc
 	doctoc --title '' --github README.md
