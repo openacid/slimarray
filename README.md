@@ -1,13 +1,13 @@
 # slimarray
 
 [![Travis](https://travis-ci.com/openacid/slimarray.svg?branch=main)](https://travis-ci.com/openacid/slimarray)
-<!-- [![AppVeyor](https://ci.appveyor.com/api/projects/status/m0vvvrru7a1g4mae/branch/main?svg=true)](https://ci.appveyor.com/project/drmingdrmer/slimarray/branch/main) -->
 ![test](https://github.com/openacid/slimarray/workflows/test/badge.svg)
 
 [![Report card](https://goreportcard.com/badge/github.com/openacid/slimarray)](https://goreportcard.com/report/github.com/openacid/slimarray)
 [![Coverage Status](https://coveralls.io/repos/github/openacid/slimarray/badge.svg?branch=main&service=github)](https://coveralls.io/github/openacid/slimarray?branch=main&service=github)
 
 [![GoDoc](https://godoc.org/github.com/openacid/slimarray?status.svg)](http://godoc.org/github.com/openacid/slimarray)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/openacid/slimarray)](https://pkg.go.dev/github.com/openacid/slimarray)
 [![Sourcegraph](https://sourcegraph.com/github.com/openacid/slimarray/-/badge.svg)](https://sourcegraph.com/github.com/openacid/slimarray?badge)
 
 SlimArray is a space efficient, static `uint32` array.
@@ -151,7 +151,7 @@ func ExampleSlimArray() {
 
 # How it works
 
-package slimarray uses polynomial to compress and store an array of uint32. A
+Package slimarray uses polynomial to compress and store an array of uint32. A
 uint32 costs only 5 bits in a sorted array of a million number in range [0,
 1000*1000].
 

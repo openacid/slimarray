@@ -6,10 +6,15 @@ import jinja2
 import subprocess
 
 def render_j2(tmpl_path, tmpl_vars, output_path):
-    template_loader = jinja2.FileSystemLoader(searchpath='./')
-    template_env = jinja2.Environment(loader=template_loader,
+
+    def include_file(name):
+        return jinja2.Markup(loader.get_source(env, name)[0])
+
+    loader = jinja2.FileSystemLoader(searchpath='./')
+    env = jinja2.Environment(loader=loader,
                                       undefined=jinja2.StrictUndefined)
-    template = template_env.get_template(tmpl_path)
+    env.globals['include_file'] = include_file
+    template = env.get_template(tmpl_path)
 
     txt = template.render(tmpl_vars)
 

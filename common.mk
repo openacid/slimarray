@@ -78,7 +78,7 @@ doc:
 	godocdown . > docs/$(NAME).md
 	# "package" is the first phrase in a go doc.
 	# "## Usage" is the start of API section.
-	cat docs/$(NAME).md | awk '/^package /,/^## Usage/' | grep -v '^## Usage' > docs/$(NAME)-package.md
+	cat docs/$(NAME).md | awk '/^Package /,/^## Usage/' | grep -v '^## Usage' > docs/$(NAME)-package.md
 
 
 readme: doc

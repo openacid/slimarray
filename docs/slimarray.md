@@ -2,7 +2,7 @@
 --
     import "github.com/openacid/slimarray"
 
-package slimarray uses polynomial to compress and store an array of uint32. A
+Package slimarray uses polynomial to compress and store an array of uint32. A
 uint32 costs only 5 bits in a sorted array of a million number in range [0,
 1000*1000].
 

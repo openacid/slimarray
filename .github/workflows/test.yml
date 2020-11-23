@@ -34,11 +34,24 @@ jobs:
             restore-keys: |
               ${{ runner.os }}-go-
 
+        - name: Check go-deps.txt existence
+          id: check_deps
+          uses: andstor/file-existence-action@v1
+          with:
+            files: "go-deps.txt"
+
+        - name: Read go-deps.txt
+          id: godeps
+          if: steps.check_deps.outputs.files_exists == 'true'
+          uses: juliangruber/read-file-action@v1
+          with:
+            path: ./go-deps.txt
+
+        - name: Install go-deps.txt
+          if: steps.check_deps.outputs.files_exists == 'true'
+          run: |
+            go get ${{ steps.godeps.outputs.content }}
+
         - name: test
-          run: go test ./...
-
-        - name: test examples iplist
-          run: cd example/iplist && go run iplist.go
-
-        - name: test examples slimstar
-          run: cd example/slimstar && go run slimstar.go
+          run: |
+            go test ./...
