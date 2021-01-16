@@ -41,3 +41,17 @@ message SlimArray {
     // packed residuals for every elt.
     repeated uint64 Residuals   = 23;
 }
+
+// SlimBytes is a var-length []byte array.
+//
+// Since 0.1.4
+message SlimBytes {
+
+    // Positions is the array of start position of every record.
+    // There are n + 1 int32 in it.
+    // The last one equals len(Records)
+    SlimArray Positions = 21;
+
+    // Records is byte slice of all record packed together.
+    bytes Records  = 22;
+}
