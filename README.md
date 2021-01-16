@@ -18,6 +18,11 @@ With a SlimArray with a million sorted number in range `[0, 1000*1000]`,
 - reading a `uint32` with `Get()` takes **7 ns**.
 - batch reading with `Slice()` takes **3.8 ns**/elt.
 
+SlimBytes is an array of var-length records(a record is a `[]byte`), which is indexed by SlimArray.
+Thus the memory overhead of storing `offset` and `length` of each record is very low, e.g., about **8 bits/record**,
+compared to a typical implementation that uses an offset of type int(`32 to 64 bit / record`).
+An `Get()` takes **15 ns**.
+
 中文介绍: [https://blog.openacid.com/algo/slimarray/](https://blog.openacid.com/algo/slimarray/)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -30,6 +35,7 @@ With a SlimArray with a million sorted number in range `[0, 1000*1000]`,
 - [Install](#install)
 - [Synopsis](#synopsis)
   - [Build a SlimArray](#build-a-slimarray)
+  - [Build a SlimBytes](#build-a-slimbytes)
 - [How it works](#how-it-works)
     - [The General Idea](#the-general-idea)
     - [What It Is And What It Is Not](#what-it-is-and-what-it-is-not-1)
@@ -146,6 +152,52 @@ func ExampleSlimArray() {
 	//  elt_width : 3
 	//   mem_elts : 112
 	//   bits/elt : 16
+}
+```
+
+
+## Build a SlimBytes
+
+```go
+package slimarray_test
+
+import (
+	"fmt"
+
+	"github.com/openacid/slimarray"
+)
+
+func ExampleSlimBytes() {
+
+	records := [][]byte{
+		[]byte("SlimBytes"),
+		[]byte("is"),
+		[]byte("an"),
+		[]byte("array"),
+		[]byte("of"),
+		[]byte("var-length"),
+		[]byte("records(a"),
+		[]byte("record"),
+		[]byte("is"),
+		[]byte("a"),
+		[]byte("[]byte"),
+		[]byte("which"),
+		[]byte("is"),
+		[]byte("indexed"),
+		[]byte("by"),
+		[]byte("SlimArray"),
+	}
+
+	a, err := slimarray.NewBytes(records)
+	_ = err
+
+	for i := 0; i < 16; i++ {
+		fmt.Print(string(a.Get(int32(i))), " ")
+	}
+	fmt.Println()
+
+	// Output:
+	// SlimBytes is an array of var-length records(a record is a []byte which is indexed by SlimArray
 }
 ```
 

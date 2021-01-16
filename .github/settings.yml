@@ -3,6 +3,8 @@ _extends: gh-config
 
 repository:
   name: slimarray
-  description: SlimArray compresses uint32 into several bits, by using a polynomial to describe overall trend of an array.
+  description: |
+    SlimArray compresses uint32 into several bits, by using a polynomial to describe overall trend of an array.
+    SlimBytes use SlimArray to index a record array, to reduce memory overhead.
   homepage: https://openacid.github.io/
   topics: go, golang, memory, compacted, compress, array, space

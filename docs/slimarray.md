@@ -148,6 +148,13 @@ SlimArray compact `Seg` into a dense format:
 ## Usage
 
 ```go
+var (
+	BytesTooLarge = errors.New("total bytes exceeds max value of uint32")
+	TooManyRows   = errors.New("row count exceeds max value of int32")
+)
+```
+
+```go
 var File_slimarray_proto protoreflect.FileDescriptor
 ```
 
@@ -217,6 +224,16 @@ func (sm *SlimArray) Get(i int32) uint32
 Get returns the uncompressed uint32 value. A Get() costs about 7 ns
 
 Since 0.1.1
+
+#### func (*SlimArray) Get2
+
+```go
+func (sm *SlimArray) Get2(i int32) (uint32, uint32)
+```
+Get2 returns two uncompressed uint32 value at i and i + 1. A Get2() costs about
+15 ns.
+
+Since 0.1.4
 
 #### func (*SlimArray) GetBitmap
 
@@ -316,4 +333,90 @@ Since 0.1.1
 
 ```go
 func (x *SlimArray) String() string
+```
+
+#### type SlimBytes
+
+```go
+type SlimBytes struct {
+
+	// Positions is the array of start position of every record.
+	// There are n + 1 int32 in it.
+	// The last one equals len(Records)
+	Positions *SlimArray `protobuf:"bytes,21,opt,name=Positions,proto3" json:"Positions,omitempty"`
+	// Records is byte slice of all record packed together.
+	Records []byte `protobuf:"bytes,22,opt,name=Records,proto3" json:"Records,omitempty"`
+}
+```
+
+SlimBytes is a var-length []byte array.
+
+Internally it use a SlimArray to store record positions. Thus the memory
+overhead is about 8 bit / record.
+
+Since 0.1.4
+
+#### func  NewBytes
+
+```go
+func NewBytes(records [][]byte) (*SlimBytes, error)
+```
+NewBytes creates SlimBytes, which is an array of byte slice, from a series of
+records.
+
+Since 0.1.14
+
+#### func (*SlimBytes) Descriptor
+
+```go
+func (*SlimBytes) Descriptor() ([]byte, []int)
+```
+Deprecated: Use SlimBytes.ProtoReflect.Descriptor instead.
+
+#### func (*SlimBytes) Get
+
+```go
+func (b *SlimBytes) Get(i int32) []byte
+```
+Get the i-th record.
+
+
+A Get costs about 17 ns
+
+Since 0.1.14
+
+#### func (*SlimBytes) GetPositions
+
+```go
+func (x *SlimBytes) GetPositions() *SlimArray
+```
+
+#### func (*SlimBytes) GetRecords
+
+```go
+func (x *SlimBytes) GetRecords() []byte
+```
+
+#### func (*SlimBytes) ProtoMessage
+
+```go
+func (*SlimBytes) ProtoMessage()
+```
+
+#### func (*SlimBytes) ProtoReflect
+
+```go
+func (x *SlimBytes) ProtoReflect() protoreflect.Message
+```
+
+#### func (*SlimBytes) Reset
+
+```go
+func (x *SlimBytes) Reset()
+```
+
+#### func (*SlimBytes) String
+
+```go
+func (x *SlimBytes) String() string
 ```
