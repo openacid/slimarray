@@ -253,6 +253,71 @@ func (sm *SlimArray) Get(i int32) uint32 {
 	return uint32(v + int64(d&bitmap.Mask[residualWidth]))
 }
 
+// Get2 returns two uncompressed uint32 value at i and i + 1.
+// A Get2() costs about 15 ns.
+//
+// Since 0.1.4
+func (sm *SlimArray) Get2(i int32) (uint32, uint32) {
+
+	if i&0xf == 0xf {
+		return sm.Get(i), sm.Get(i + 1)
+	}
+
+	// else: i and i+1 must be in the same span, thus most of the variables do
+	// not change.
+
+	// the first value: the i th value:
+
+	// The index of a segment
+	bitmapI := i >> segSizeShift
+	spansBitmap := sm.Bitmap[bitmapI]
+	rank := sm.Rank[bitmapI]
+
+	i = i & segSizeMask
+	x := float64(i)
+
+	// i>>4 is in-segment span index
+	bm := spansBitmap & bitmap.Mask[i>>4]
+	spanIdx := int(rank) + bits.OnesCount64(bm)
+
+	// eval y = a + bx + cx²
+
+	j := spanIdx * polyCoefCnt
+	p := sm.Polynomials
+	v := int64(p[j] + x*p[j+1] + x*x*p[j+2])
+
+	config := sm.Configs[spanIdx]
+	residualWidth := config & 0xff
+	offset := config >> 8
+
+	// where the residual is
+	resBitIdx := offset + int64(i)*residualWidth
+
+	// extract residual from packed []uint64
+	d := sm.Residuals[resBitIdx>>6]
+	d = d >> uint(resBitIdx&63)
+
+	mask := bitmap.Mask[residualWidth]
+	rst1 := uint32(v + int64(d&mask))
+
+	// the second: i+1 th value
+	//
+	// The index of a segment
+	x += 1
+	v = int64(p[j] + x*p[j+1] + x*x*p[j+2])
+
+	// where the residual is
+	resBitIdx += residualWidth
+
+	// extract residual from packed []uint64
+	d = sm.Residuals[resBitIdx>>6]
+	d = d >> uint(resBitIdx&63)
+
+	rst2 := uint32(v + int64(d&mask))
+
+	return rst1, rst2
+}
+
 // Slice returns a slice of uncompressed uint32, e.g., similar to foo := nums[start:end].
 // `rst` is used to store returned values, it has to have at least `end-start` elt in it.
 //

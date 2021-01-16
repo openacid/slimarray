@@ -236,12 +236,6 @@ func TestSlimArray_largenum(t *testing.T) {
 	step := int32(64)
 	ns := testutil.RandU32Slice(1<<30, n, step)
 
-	for i := 0; i < len(ns); i++ {
-		if ns[i] < 0 {
-			panic("<0")
-		}
-	}
-
 	a := NewU32(ns)
 	testGet(ta, a, ns)
 }
@@ -256,6 +250,26 @@ func TestSlimArray_Get_panic(t *testing.T) {
 	ta.Panics(func() {
 		a.Get(int32(-1))
 	})
+}
+
+func TestSlimArray_Get2(t *testing.T) {
+
+	ta := require.New(t)
+
+	n := int32(1024 * 1024)
+	step := int32(32)
+	nums := testutil.RandU32Slice(1<<30, n, step)
+
+	a := NewU32(nums)
+
+	for i, n := range nums {
+		if i < len(nums)-1 {
+
+			r, rnext := a.Get2(int32(i))
+			ta.Equal(n, r, "i=%d expect: %v; but: %v", i, n, r)
+			ta.Equal(nums[i+1], rnext, "i=%d expect: %v; but: %v", i, nums[i+1], rnext)
+		}
+	}
 }
 
 func TestSlimArray_Stat(t *testing.T) {
@@ -337,6 +351,27 @@ func BenchmarkSlimArray_Get(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		s += a.Get(int32(i & mask))
+	}
+
+	Output = int(s)
+}
+
+func BenchmarkSlimArray_Get2(b *testing.B) {
+
+	n := int32(1024*1024) + 1
+	mask := int(1024*1024 - 1)
+	step := int32(128)
+	ns := testutil.RandU32Slice(0, n, step)
+
+	s := uint32(0)
+
+	a := NewU32(ns)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		x, _ := a.Get2(int32(i & mask))
+		s += x
 	}
 
 	Output = int(s)

@@ -139,6 +139,9 @@ func (x *SlimArray) GetResiduals() []uint64 {
 
 // SlimBytes is a var-length []byte array.
 //
+// Internally it use a SlimArray to store record positions.
+// Thus the memory overhead is about 8 bit / record.
+//
 // Since 0.1.4
 type SlimBytes struct {
 	state         protoimpl.MessageState
