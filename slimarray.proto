@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-option go_package = "slimarray";
+package slimarray;
+
+option go_package = "github.com/openacid/slimarray;slimarray";
 
 // SlimArray compresses a uint32 array with overall trend by describing the trend
 // with a polynomial, e.g., to store a sorted array is very common in practice.
